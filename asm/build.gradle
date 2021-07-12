@@ -1,0 +1,69 @@
+plugins {
+    id 'java-library'
+    id 'kotlin'
+    id 'groovy'
+    id 'java-gradle-plugin'
+    id 'kotlin-kapt'
+    id 'maven'
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}
+
+sourceSets {
+    main {
+        groovy {
+            srcDir 'src/main/groovy'
+        }
+
+        java {
+            srcDir 'src/main/java'
+        }
+
+        kotlin {
+            srcDir 'src/main/kotlin'
+        }
+
+        resources {
+            srcDir 'src/main/resources'
+        }
+    }
+}
+
+dependencies {
+    implementation gradleApi()
+    implementation localGroovy()
+    implementation 'commons-io:commons-io:2.6'
+    implementation 'org.javassist:javassist:3.27.0-GA'
+//    api project(path: ':check-thread')
+    kapt "com.google.auto.service:auto-service:1.0-rc6"
+    implementation 'com.google.auto.service:auto-service:1.0-rc6'
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+    api "com.android.tools.build:gradle:4.1.3"
+}
+
+gradlePlugin {
+    plugins {
+        version {
+            // 在 app 模块需要通过 id 引用这个插件
+            id = 'trace-log'
+            // 实现这个插件的类的路径
+            implementationClass = 'com.ckenergy.trace.TraceLogPlugin'
+        }
+    }
+}
+
+//指定上传的地址和插件id,版本
+//需要上传之后才可以给其他工程当做插件使用
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            pom.groupId = 'com.ckenergy.trace'
+            pom.artifactId = 'TraceLogPlugin'
+            pom.version = '0.0.3'
+            repository(url: uri('/Users/mac/.m2/repository'))
+        }
+    }
+}

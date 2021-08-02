@@ -4,8 +4,8 @@ import com.android.build.api.transform.*
 import com.android.build.gradle.internal.pipeline.TransformManager
 import com.android.ide.common.internal.WaitableExecutor
 import com.android.utils.FileUtils
-import org.apache.commons.io.FileUtils.forceMkdir
-import org.gradle.internal.impldep.org.apache.commons.io.FileUtils.forceMkdir
+import com.ckenergy.trace.Contants.DEFAULT_BLACK_TRACE
+import com.ckenergy.trace.Contants.UN_TRACE_CLASS
 import org.objectweb.asm.ClassReader
 import org.objectweb.asm.ClassWriter
 import java.io.ByteArrayInputStream
@@ -14,9 +14,6 @@ import java.io.FileOutputStream
 import java.io.InputStream
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
-import java.util.*
-import java.util.concurrent.Executors
-import java.util.concurrent.Future
 import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
 import java.util.zip.ZipOutputStream
@@ -24,10 +21,10 @@ import java.util.zip.ZipOutputStream
 /**
  * Created by chengkai on 2021/3/5.
  */
-class TraceLogTransform() : Transform() {
+class TraceLogTransform : Transform() {
 
     companion object {
-        const val TAG = "TraceLogTransform"
+        const val TAG = "===TraceLogTransform==="
 
         fun newTransform(): TraceLogTransform {
             return TraceLogTransform()
@@ -40,7 +37,7 @@ class TraceLogTransform() : Transform() {
     //创建大小为16的线程池
     private val executor = WaitableExecutor.useGlobalSharedThreadPool()
 
-    override fun getName() = TAG
+    override fun getName() = "TraceLogTransform"
 
     override fun getInputTypes(): MutableSet<QualifiedContent.ContentType> {
         return TransformManager.CONTENT_CLASS
@@ -58,16 +55,23 @@ class TraceLogTransform() : Transform() {
         val enable = extension != null && extension.enable
         val startTime = System.currentTimeMillis()
 
+        val blackListFile = extension?.blackListFile
+        val traceBuildConfig = if (!blackListFile.isNullOrEmpty()) {
+            TraceBuildConfig(blackListFile).apply {
+                parseBlackFile()
+            }
+        }else null
+
         //是否增量编译
         val isIncremental = transformInvocation!!.isIncremental && this.isIncremental
         val outputProvider = transformInvocation.outputProvider
         val inputs = transformInvocation.inputs
 
         for (input in inputs) {
-            println("====$TAG=======, dir: ${inputs.size}, ${input.directoryInputs.size}")
+//            Log.d(TAG,"dir: ${input.directoryInputs.size}")
             for (directoryInput in input.directoryInputs) {
                 val srcDir = directoryInput.file.absolutePath
-                println("====$TAG=======, directoryInput: ${srcDir}")
+//                Log.d(TAG,"directoryInput: ${srcDir}")
                 val dest = outputProvider.getContentLocation(
                     directoryInput.name,
                     directoryInput.contentTypes,
@@ -80,12 +84,11 @@ class TraceLogTransform() : Transform() {
                 if (isIncremental) {//增量更新，只 操作有改动的文件
                     //增量更新，只 操作有改动的文件
                     val fileStatusMap = directoryInput.changedFiles
-//                    println("====$TAG=======, directoryInput:$directoryInput ，size:${directoryInput.file.length()}")
                     fileStatusMap.forEach { (file, status) ->
-//                        println("====$TAG=======, changedFiles:$file,status:$status")
+                        Log.d(TAG,"changedFiles:${file.absolutePath},status:$status")
 
                         if (status == Status.ADDED || status == Status.CHANGED) {
-                            val action = if (enable) plait(file, srcDir, dest) else null
+                            val action = if (enable) plait(file, srcDir, dest, traceBuildConfig) else null
                             if (action != null) {
                                 executor.execute {
                                     action.run()
@@ -94,8 +97,6 @@ class TraceLogTransform() : Transform() {
                                 FileUtils.copyFileToDirectory(file, dest)
                             }
                         } else if (status == Status.REMOVED) {
-//                            println("====$TAG=======, dest:${dest?.exists()},file:${file.exists()}")
-
                             if (dest?.exists() == true) {
                                 dest.delete()
                             }
@@ -112,7 +113,7 @@ class TraceLogTransform() : Transform() {
                     if (enable) {
                         if (directoryInput.file.isDirectory) {
                             FileUtils.getAllFiles(directoryInput.file).forEach { file ->
-                                val action = plait(file, srcDir, dest)
+                                val action = plait(file, srcDir, dest, traceBuildConfig)
                                 if (action != null) {
                                     executor.execute {
                                         action.run()
@@ -127,7 +128,7 @@ class TraceLogTransform() : Transform() {
                     }
                 }
             }
-            println("====$TAG=======,  changedJars size:${input.jarInputs.size} ,isIncremental:$isIncremental")
+//            Log.d(TAG,"changedJars size:${input.jarInputs.size} ,isIncremental:$isIncremental")
             for (inputJar in input.jarInputs) {
                 //将jar也加进来,androidx需要这个
                 val dest = outputProvider.getContentLocation(
@@ -137,31 +138,30 @@ class TraceLogTransform() : Transform() {
                     Format.JAR
                 )
                 if (isIncremental) {//增量更新，只 操作有改动的文件
-                    println("====$TAG=======, isIncremental inputJar:${inputJar.name},status:${inputJar.status}")
+                    Log.d(TAG,"isIncremental inputJar:${inputJar.name},status:${inputJar.status}")
                     val status = inputJar.status
                     if (status == Status.REMOVED) {
                         if (dest?.exists() == true) {
                             dest.delete()
                         }
                     } else if (status == Status.NOTCHANGED) {//没变化的话只是简单的复制
-//                        FileUtils.copyFile(inputJar.file, dest)
                         if (!enable) {
                             FileUtils.copyFile(inputJar.file, dest)
                         }
                     } else {
                         if (enable) {
                             executor.execute {
-                                PlaitJarTask(inputJar.file, dest).run()
+                                PlaitJarTask(inputJar.file, dest, traceBuildConfig).run()
                             }
                         } else {
                             FileUtils.copyFile(inputJar.file, dest)
                         }
                     }
                 } else {
-//                    println("====$TAG=======, inputJar:${inputJar.name}")
+//                    Log.d(TAG,"inputJar:${inputJar.name}")
                     if (enable) {
                         executor.execute {
-                            PlaitJarTask(inputJar.file, dest).run()
+                            PlaitJarTask(inputJar.file, dest, traceBuildConfig).run()
                         }
                     } else {
                         FileUtils.copyFile(inputJar.file, dest)
@@ -171,53 +171,47 @@ class TraceLogTransform() : Transform() {
         }
         //等待所有任务运行完毕
         executor.waitForTasksWithQuickFail<Runnable>(true)
-        println("====transform >>> timeCount${System.currentTimeMillis() - startTime}")
+        println("$TAG >>> timeCount：${System.currentTimeMillis() - startTime}")
     }
 
-    private fun plait(file: File, input: String, dest: File): Runnable? {
-        val name = file.name
+    private fun plait(file: File, input: String, dest: File, traceBuildConfig: TraceBuildConfig?): Runnable? {
         val destName = file.absolutePath.replace(input, dest.absolutePath)
-//        println(">>>>>>>>> PlaitAction classPath :$name")
-        if (name.endsWith(".class") && name != "R.class"
-            && !name.startsWith("R\$") && name != ("BuildConfig.class")
-        ) {//过滤出需要的class,将一些基本用不到的class去掉
-            println(">>>>>>>>> PlaitAction filter classPath :${file.absolutePath}")
-            return PlaitAction(file, destName)
-        }
-        return null
+//        Log.d(TAG,">>>>>>>>> PlaitAction filter classPath :${file.absolutePath}")
+        return PlaitAction(file, destName, traceBuildConfig)
     }
 
-    private class PlaitAction(val file: File, val dest: String) :
+    private class PlaitAction(val file: File, val dest: String, val traceBuildConfig: TraceBuildConfig?) :
         Runnable {
 
         override fun run() {
             val destFile = File(dest)
-            org.apache.commons.io.FileUtils.forceMkdir(destFile.parentFile)
+            val destDir = destFile.parentFile
+            org.apache.commons.io.FileUtils.forceMkdir(destDir)
             val classPath = dest
 //            println(">>>>>>>>> classPath :$classPath")
 
-            val name = file.absolutePath
-            if (!name.contains("TraceTag", false)) {
+            val name = file.name
+            if (traceBuildConfig?.isNeedTraceClass(name) != false) {
                 val fos = FileOutputStream(classPath)
                 try {
                     val cr = ClassReader(file.readBytes())
                     val cw = ClassWriter(cr, ClassWriter.COMPUTE_MAXS)
                     //需要处理的类使用自定义的visitor来处理
-                    val visitor = PlaitClassVisitor(cw)
+                    val visitor = PlaitClassVisitor(cw, traceBuildConfig)
                     cr.accept(visitor, ClassReader.EXPAND_FRAMES)
 
                     val bytes = cw.toByteArray()
                     fos.write(bytes)
                 } catch (e: Exception) {
                     e.printStackTrace()
-                    println(">>>>>>>>> PlaitAction error :${e.printStackTrace()}")
-                    FileUtils.copyFileToDirectory(file, destFile)
+                    Log.d(TAG,">>>>>>>>> PlaitAction error :${e.printStackTrace()}")
+                    FileUtils.copyFileToDirectory(file, destDir)
                 } finally {
                     fos.flush()
                     fos.close()
                 }
             }else {
-                FileUtils.copyFileToDirectory(file, destFile)
+                FileUtils.copyFileToDirectory(file, destDir)
             }
         }
 
@@ -226,12 +220,13 @@ class TraceLogTransform() : Transform() {
     private class PlaitJarTask(
         var fromJar: File,
         val outJar: File,
+        val traceBuildConfig: TraceBuildConfig?
     ) : Runnable {
         override fun run() {
-            innerTraceMethodFromJar(fromJar, outJar)
+            innerTraceMethodFromJar(fromJar, outJar, traceBuildConfig)
         }
 
-        private fun innerTraceMethodFromJar(input: File, output: File) {
+        private fun innerTraceMethodFromJar(input: File, output: File, traceBuildConfig: TraceBuildConfig?) {
             var zipOutputStream: ZipOutputStream? = null
             var zipFile: ZipFile? = null
             try {
@@ -242,13 +237,13 @@ class TraceLogTransform() : Transform() {
                     val zipEntry = enumeration.nextElement()
                     val zipEntryName = zipEntry.name
                     val inputStream = zipFile.getInputStream(zipEntry)
-                    if (!zipEntryName.contains("TraceTag", false)) {
-//                        println(">>>>>>>>> innerTraceMethodFromJar classPath :$zipEntryName")
+//                    println(">>>>>>>>> innerTraceMethodFromJar classPath :$zipEntryName")
+                    if (traceBuildConfig?.isNeedTraceClass(zipEntryName) != false) {
 
                         val cr = ClassReader(inputStream)
                         val cw = ClassWriter(cr, ClassWriter.COMPUTE_MAXS)
                         //需要处理的类使用自定义的visitor来处理
-                        val visitor = PlaitClassVisitor(cw)
+                        val visitor = PlaitClassVisitor(cw, traceBuildConfig)
                         cr.accept(visitor, ClassReader.EXPAND_FRAMES)
 
                         val bytes = cw.toByteArray()

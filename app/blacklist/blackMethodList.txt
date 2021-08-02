@@ -1,0 +1,12 @@
+[package]
+#只对某些类操作
+-traceclass com/hellotalk/trace/MainActivity
+
+#只对某些包操作
+-tracepackage
+
+# 可以将某个class加入白名单中
+-keepclass com/hellotalk/trace/ignore/TestIgnore
+
+# 可以将某个package加入白名单中
+-keeppackage androidx/

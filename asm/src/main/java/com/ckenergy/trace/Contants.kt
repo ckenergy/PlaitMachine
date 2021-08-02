@@ -7,5 +7,9 @@ object Contants {
 
     const val ALL = "all*"
     const val TRACELOG_CLASS = "com/hellotalk/tracelog/TraceTag"
+    val UN_TRACE_CLASS = arrayOf("R.class", "R$", "Manifest", "BuildConfig")
+
+    const val DEFAULT_BLACK_TRACE = ("[package]\n"
+            + "-keepclass $TRACELOG_CLASS\n")
 
 }

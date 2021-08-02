@@ -16,7 +16,7 @@ public class TraceTag {
      */
     @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
     public static void i(String name) {
-        Trace.beginSection("======"+name);
+        Trace.beginSection(name);
     }
 
     /**

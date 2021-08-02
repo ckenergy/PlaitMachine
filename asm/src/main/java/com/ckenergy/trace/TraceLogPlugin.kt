@@ -14,17 +14,17 @@ class TraceLogPlugin : Plugin<Project> {
     override fun apply(project: Project) {
 
         if (project.plugins.hasPlugin(AppPlugin::class.java)) {
-//            project.extensions.create("TraceLog", TraceLogExtension::class.java, project)
+            project.extensions.create("TraceLog", TraceLogExtension::class.java)
             val transform = TraceLogTransform.newTransform()
             val appExtension = project.extensions.findByType(AppExtension::class.java)
             appExtension?.registerTransform(transform)
 
             project.afterEvaluate {
-                val configuration: TraceLogExtension? = TraceLogExtension().apply {
-                    enable = true
-                }
+                val configuration: TraceLogExtension? =
+                    it.extensions.getByName("TraceLog") as? TraceLogExtension
 //                    it.extensions.getByName("plaitMachine") as? TraceLogExtension
-                println("===== TraceLogPlugin55 >>>> configuration:${configuration?.enable}")
+                Log.printLog = configuration?.logInfo ?: false
+                Log.d(TraceLogTransform.TAG, "configuration:${configuration?.enable}")
                 //注入PlaitMachineTransform
                 transform.traceLogExtension = configuration
 

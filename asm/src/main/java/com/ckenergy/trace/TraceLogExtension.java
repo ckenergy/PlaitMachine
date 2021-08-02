@@ -6,9 +6,9 @@ package com.ckenergy.trace;
 
 public class TraceLogExtension {
      public boolean enable;
-
-     public TraceLogExtension() {
-          enable = false;
-     }
+     public boolean logInfo;
+     public String baseMethodMapFile;
+     public String blackListFile;
+     public String output;
 
 }

@@ -5,6 +5,10 @@ import android.os.Build;
 import android.os.Trace;
 import android.util.Log;
 
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+
 
 public class TraceTag {
 
@@ -25,5 +29,17 @@ public class TraceTag {
     @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
     public static void o() {
         Trace.endSection();
+    }
+
+    public static void test(Object[] parater) {
+        Log.e(TAG, "Test:"+ Arrays.toString(parater));
+    }
+
+    public static void test(HashMap<String, Map<String, Object>> maps) {
+        Log.e(TAG, "Test:"+ maps);
+    }
+
+    public static void test(TraceInfo traceInfo) {
+        Log.e(TAG, "Test:"+ traceInfo);
     }
 }

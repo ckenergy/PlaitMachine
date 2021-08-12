@@ -7,7 +7,7 @@ import org.objectweb.asm.Opcodes
 
 class PlaitClassVisitor(
     classVisitor: ClassVisitor, val traceBuildConfig: TraceBuildConfig?
-) : ClassVisitor(Opcodes.ASM5, classVisitor) {
+) : ClassVisitor(Opcodes.ASM7, classVisitor) {
 
     private var className: String? = null
     private var superName: String? = null
@@ -72,7 +72,7 @@ class PlaitClassVisitor(
     }
 
     override fun visitAnnotation(descriptor: String?, visible: Boolean): AnnotationVisitor {
-        println("visitAnnotation descriptor:$descriptor, visible:$visible")
+//        println("visitAnnotation descriptor:$descriptor, visible:$visible")
         return super.visitAnnotation(descriptor, visible)
     }
 

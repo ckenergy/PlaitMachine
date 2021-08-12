@@ -1,5 +1,7 @@
 package com.hellotalk.tracelog;
 
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -8,12 +10,20 @@ import java.util.Map;
 
 public class TraceInfo {
 
+    private String methodName;
 
     private Object current;
 
     private Object[] args;
 
-    private Map<String, Map<String, Object>> annotations;
+    private HashMap<String, HashMap<String, Object>> annotations;
+
+    public TraceInfo(String methodName, Object current, Object[] args, HashMap<String, HashMap<String, Object>> annotations) {
+        this.methodName = methodName;
+        this.current = current;
+        this.args = args;
+        this.annotations = annotations;
+    }
 
     public Object[] getArgs() {
         return args;
@@ -23,17 +33,37 @@ public class TraceInfo {
         this.args = args;
     }
 
-    public Map<String, Map<String, Object>> getAnnotations() {
+    public HashMap<String, HashMap<String, Object>> getAnnotations() {
         return annotations;
     }
 
-    public void setAnnotations(Map<String, Map<String, Object>> annotations) {
+    public void setAnnotations(HashMap<String, HashMap<String, Object>> annotations) {
         this.annotations = annotations;
     }
 
-    public TraceInfo(Object current, Object[] args, Map<String, Map<String, Object>> annotations) {
+    public String getMethodName() {
+        return methodName;
+    }
+
+    public void setMethodName(String methodName) {
+        this.methodName = methodName;
+    }
+
+    public Object getCurrent() {
+        return current;
+    }
+
+    public void setCurrent(Object current) {
         this.current = current;
-        this.args = args;
-        this.annotations = annotations;
+    }
+
+    @Override
+    public String toString() {
+        return "TraceInfo{" +
+                "methodName='" + methodName + '\'' +
+                ", current=" + current +
+                ", args=" + Arrays.toString(args) +
+                ", annotations=" + annotations +
+                '}';
     }
 }

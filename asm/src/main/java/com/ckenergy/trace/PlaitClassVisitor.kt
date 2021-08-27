@@ -7,7 +7,7 @@ import org.objectweb.asm.Opcodes
 
 class PlaitClassVisitor(
     classVisitor: ClassVisitor, val traceBuildConfig: TraceBuildConfig?
-) : ClassVisitor(Opcodes.ASM7, classVisitor) {
+) : ClassVisitor(Contants.ASM_VERSION, classVisitor) {
 
     private var className: String? = null
     private var superName: String? = null

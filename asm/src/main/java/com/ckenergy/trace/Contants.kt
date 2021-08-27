@@ -1,5 +1,7 @@
 package com.ckenergy.trace
 
+import org.objectweb.asm.Opcodes
+
 /**
  * Created by chengkai on 2021/4/26.
  */
@@ -12,5 +14,7 @@ object Contants {
 
     const val DEFAULT_BLACK_TRACE = ("[package]\n"
             + "-keepclass $TRACELOG_CLASS\n")
+
+    const val ASM_VERSION = Opcodes.ASM7
 
 }

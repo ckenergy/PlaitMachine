@@ -41,5 +41,13 @@ public class TraceTag {
 
     public static void test(TraceInfo traceInfo) {
         Log.e(TAG, "Test:"+ traceInfo);
+        for(Map.Entry<String, HashMap<String, Object>> entry : traceInfo.getAnnotations().entrySet()) {
+            for (Map.Entry<String, Object> entry1 : entry.getValue().entrySet()) {
+                if (entry1.getValue() instanceof Object[]) {
+                    Object[] list = (Object[]) entry1.getValue();
+                    Log.e(TAG, entry.getKey()+", key:"+entry1.getKey()+", value"+ Arrays.toString(list));
+                }
+            }
+        }
     }
 }

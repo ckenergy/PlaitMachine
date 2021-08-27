@@ -3,6 +3,8 @@ package com.ckenergy.trace
 import org.objectweb.asm.*
 import org.objectweb.asm.commons.AdviceAdapter
 import java.util.*
+import kotlin.collections.ArrayList
+import kotlin.collections.HashMap
 
 class PlaitMethodVisitor(
     val className: String,
@@ -10,7 +12,7 @@ class PlaitMethodVisitor(
     access: Int,
     name: String?,
     val descriptor: String?
-) : AdviceAdapter(Opcodes.ASM7, methodVisitor, access, name, descriptor) {
+) : AdviceAdapter(Contants.ASM_VERSION, methodVisitor, access, name, descriptor) {
 
     val annotations = HashMap<String, Map<String, Any?>?>()
 
@@ -18,7 +20,7 @@ class PlaitMethodVisitor(
     override fun onMethodEnter() {
         super.onMethodEnter()
         var traceName = "$className.$name"
-        Log.d(TraceLogTransform.TAG, "onMethodEnter name:$traceName ,annotations:$annotations")
+        Log.d(TraceLogTransform.TAG, "onMethodEnter name:$traceName")
 //        val start = (traceName.length - 126).coerceAtLeast(0)
 //        traceName = traceName.subSequence(start, traceName.length)//不能超过127个字符
 //        mv.visitLdcInsn(traceName)
@@ -50,7 +52,7 @@ class PlaitMethodVisitor(
 
         val mapIndex = objsIndex + 1
         visitMap(mapIndex)
-        val traceInfoIndex = mapIndex + 2
+        val traceInfoIndex = mapIndex + 1
         //构建traceinfo对象
         visiteTraceInfo(isStatic, traceName, objsIndex, mapIndex, traceInfoIndex)
         //注入方法
@@ -58,7 +60,7 @@ class PlaitMethodVisitor(
         mv.visitMethodInsn(
             INVOKESTATIC,
             Contants.TRACELOG_CLASS,
-            "test", "(Lcom/hellotalk/tracelog/TraceInfo;)V",
+            "test", "(L${Contants.TRACEINFO_CLASS};)V",
             false
         )
     }
@@ -138,13 +140,13 @@ class PlaitMethodVisitor(
     }
 
     private fun visitMap(index: Int): Int {
-        Log.d(TraceLogTransform.TAG, "annotations:" + annotations)
+        Log.d(TraceLogTransform.TAG, "annotations:$annotations")
         mv.visitTypeInsn(NEW, "java/util/HashMap")
         mv.visitInsn(DUP)
         mv.visitMethodInsn(INVOKESPECIAL, "java/util/HashMap", "<init>", "()V", false)
         mv.visitVarInsn(ASTORE, index)
 
-        annotations.forEach { key, value ->
+        annotations.forEach { (key, value) ->
             mv.visitVarInsn(ALOAD, index)
             mv.visitLdcInsn(key)
             mv.visitMethodInsn(
@@ -171,19 +173,20 @@ class PlaitMethodVisitor(
                 0,
                 null
             )
-            mv.visitVarInsn(ALOAD, index + 1)
-            mv.visitLdcInsn(value?.keys.toString())
-            mv.visitLdcInsn(value?.values.toString())
-//            mv.visitLdcInsn("key")
-//            mv.visitLdcInsn("value")
-            mv.visitMethodInsn(
-                INVOKEVIRTUAL,
-                "java/util/HashMap",
-                "put",
-                "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;",
-                false
-            )
-            mv.visitInsn(POP)
+            value?.forEach { (t, u) ->
+                mv.visitVarInsn(ALOAD, index + 1)
+                mv.visitLdcInsn(t)
+//                mv.visitLdcInsn(u?.toString())
+                visiteAnnotationValue(u, index + 2)
+                mv.visitMethodInsn(
+                    INVOKEVIRTUAL,
+                    "java/util/HashMap",
+                    "put",
+                    "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;",
+                    false
+                )
+                mv.visitInsn(POP)
+            }
             mv.visitVarInsn(ALOAD, index)
             mv.visitLdcInsn(key)
             mv.visitVarInsn(ALOAD, index + 1)
@@ -199,13 +202,19 @@ class PlaitMethodVisitor(
         return index
     }
 
-    private fun visiteTraceInfo(isStatic: Boolean, traceName: String, objsIndex: Int, mapIndex: Int, traceInfoIndex: Int) {
+    private fun visiteTraceInfo(
+        isStatic: Boolean,
+        traceName: String,
+        objsIndex: Int,
+        mapIndex: Int,
+        traceInfoIndex: Int
+    ) {
         mv.visitTypeInsn(NEW, Contants.TRACEINFO_CLASS)
         mv.visitInsn(DUP)
         mv.visitLdcInsn(traceName)
         if (isStatic) {
             mv.visitInsn(ACONST_NULL);
-        }else {
+        } else {
             mv.visitVarInsn(ALOAD, 0)
         }
         mv.visitVarInsn(ALOAD, objsIndex)
@@ -232,19 +241,245 @@ class PlaitMethodVisitor(
         )
     }
 
+    private fun visiteAnnotationValue(value: Any?, nextIndex: Int) {
+        fun eachLoad(listIndex: Int, listValue: Any) {
+            mv.visitVarInsn(ALOAD, nextIndex)
+            mv.visitLdcInsn(listIndex)
+            visiteType(listValue)
+            mv.visitInsn(AASTORE)
+        }
+        when (value) {
+            is ArrayList<*> -> {
+                newObjArray(nextIndex, value.size)
+                value.forEachIndexed { index1, any ->
+                    eachLoad(index1, any)
+                }
+                mv.visitVarInsn(ALOAD, nextIndex)
+            }
+            is ByteArray -> {
+                newObjArray(nextIndex, value.size)
+                value.forEachIndexed { index1, i ->
+                    eachLoad(index1, i)
+                }
+                mv.visitVarInsn(ALOAD, nextIndex)
+            }
+            is IntArray -> {
+                newObjArray(nextIndex, value.size)
+                value.forEachIndexed { index1, i ->
+                    eachLoad(index1, i)
+                }
+                mv.visitVarInsn(ALOAD, nextIndex)
+            }
+            is LongArray -> {
+                newObjArray(nextIndex, value.size)
+                value.forEachIndexed { index1, i ->
+                    eachLoad(index1, i)
+                }
+                mv.visitVarInsn(ALOAD, nextIndex)
+            }
+            is BooleanArray -> {
+                newObjArray(nextIndex, value.size)
+                value.forEachIndexed { index1, i ->
+                    eachLoad(index1, i)
+                }
+                mv.visitVarInsn(ALOAD, nextIndex)
+            }
+            is FloatArray -> {
+                newObjArray(nextIndex, value.size)
+                value.forEachIndexed { index1, i ->
+                    eachLoad(index1, i)
+                }
+                mv.visitVarInsn(ALOAD, nextIndex)
+            }
+            is DoubleArray -> {
+                newObjArray(nextIndex, value.size)
+                value.forEachIndexed { index1, i ->
+                    eachLoad(index1, i)
+                }
+                mv.visitVarInsn(ALOAD, nextIndex)
+            }
+            is CharArray -> {
+                newObjArray(nextIndex, value.size)
+                value.forEachIndexed { index1, i ->
+                    eachLoad(index1, i)
+                }
+                mv.visitVarInsn(ALOAD, nextIndex)
+            }
+            is ShortArray -> {
+                newObjArray(nextIndex, value.size)
+                value.forEachIndexed { index1, i ->
+                    eachLoad(index1, i)
+                }
+                mv.visitVarInsn(ALOAD, nextIndex)
+            }
+            else -> {
+                visiteType(value)
+            }
+        }
+    }
+
+    private fun newObjArray(index: Int, size: Int) {
+        mv.visitLdcInsn(size)
+        mv.visitTypeInsn(ANEWARRAY, "java/lang/Object")
+        mv.visitVarInsn(ASTORE, index)
+    }
+
+    private fun visiteType(value: Any?) {
+        when (value) {
+            is Int -> {
+                mv.visitLdcInsn(value)
+                mv.visitMethodInsn(
+                    INVOKESTATIC,
+                    "java/lang/Integer",
+                    "valueOf",
+                    "(I)Ljava/lang/Integer;",
+                    false
+                );
+            }
+            is Short -> {
+                mv.visitLdcInsn(value)
+                mv.visitMethodInsn(
+                    INVOKESTATIC,
+                    "java/lang/Short",
+                    "valueOf",
+                    "(S)Ljava/lang/Short;",
+                    false
+                );
+            }
+            is Boolean -> {
+                mv.visitLdcInsn(value)
+                mv.visitMethodInsn(
+                    INVOKESTATIC,
+                    "java/lang/Boolean",
+                    "valueOf",
+                    "(Z)Ljava/lang/Boolean;",
+                    false
+                );
+            }
+            is Char -> {
+                mv.visitLdcInsn(value)
+                mv.visitMethodInsn(
+                    INVOKESTATIC,
+                    "java/lang/Character",
+                    "valueOf",
+                    "(C)Ljava/lang/Character;",
+                    false
+                );
+            }
+            is Byte -> {
+                mv.visitLdcInsn(value)
+                mv.visitMethodInsn(
+                    INVOKESTATIC,
+                    "java/lang/Byte",
+                    "valueOf",
+                    "(B)Ljava/lang/Byte;",
+                    false
+                );
+            }
+            is Float -> {
+                mv.visitLdcInsn(value)
+                mv.visitMethodInsn(
+                    INVOKESTATIC,
+                    "java/lang/Float",
+                    "valueOf",
+                    "(F)Ljava/lang/Float;",
+                    false
+                );
+
+            }
+            is Double -> {
+                mv.visitLdcInsn(value)
+                mv.visitMethodInsn(
+                    INVOKESTATIC,
+                    "java/lang/Double",
+                    "valueOf",
+                    "(D)Ljava/lang/Double;",
+                    false
+                );
+
+            }
+            is Long -> {
+                mv.visitLdcInsn(value)
+                mv.visitMethodInsn(
+                    INVOKESTATIC,
+                    "java/lang/Long",
+                    "valueOf",
+                    "(J)Ljava/lang/Long;",
+                    false
+                );
+            }
+            is String -> {
+                mv.visitLdcInsn(value)
+            }
+            is AnnotionWrap -> {
+                val type = Type.getType(value.desc)
+                Log.d(
+                    TraceLogTransform.TAG,
+                    "visiteAnnotationValue class:${type.className}, descriptor:${value.desc}"
+                )
+                mv.visitFieldInsn(GETSTATIC, type.className.replace(".", "/"), value.value, value.desc.replace(".", "/"))
+            }
+            else ->{
+                Log.d(
+                    TraceLogTransform.TAG,
+                    "visiteAnnotationValue else ${value?.javaClass}"
+                )
+                mv.visitLdcInsn(value?.toString())
+            }
+        }
+    }
+
     override fun visitAnnotation(descriptor: String, visible: Boolean): AnnotationVisitor {
 //        println("visitAnnotation descriptor:$descriptor, visible:$visible")
-        return object : AnnotationVisitor(Opcodes.ASM5) {
-            override fun visit(name: String, value: Any?) {
+        val item = annotations[descriptor] as? HashMap ?: HashMap()
+        annotations[descriptor] = item
+        return object : AnnotationVisitor(Contants.ASM_VERSION) {
+            override fun visit(name: String?, value: Any?) {
                 super.visit(name, value)
-                var item = annotations[descriptor] as? HashMap
-                if (item == null) {
-                    item = hashMapOf(name to value)
-                    annotations[descriptor] = item
-                } else {
+                Log.d(TraceLogTransform.TAG, "visit name:$name, value:$value, class:${value is IntArray}")
+                if (name != null)
                     item[name] = value
-                    println("visitAnnotation name:$name, value:$value")
+            }
+
+            override fun visitEnum(name: String?, descriptor1: String, value: String?) {
+                super.visitEnum(name, descriptor1, value)
+                Log.d(
+                    TraceLogTransform.TAG,
+                    "visitEnum name:$name, descriptor:$descriptor1, value:$value"
+                )
+                if (name != null) item[name] = value
+            }
+
+            override fun visitAnnotation(name: String?, descriptor: String?): AnnotationVisitor {
+                Log.d(TraceLogTransform.TAG, "visitAnnotation name:$name, descriptor:$descriptor")
+                return super.visitAnnotation(name, descriptor)
+            }
+
+            override fun visitArray(name: String?): AnnotationVisitor {
+                Log.d(TraceLogTransform.TAG, "visitArray name:$name")
+                if (name != null) {
+                    val list = ArrayList<Any>()
+                    item[name] = list
+                    return object : AnnotationVisitor(Contants.ASM_VERSION) {
+                        override fun visit(name: String?, value: Any?) {
+                            super.visit(name, value)
+                            if (value != null) list.add(value)
+                            Log.d(TraceLogTransform.TAG, "visitArray name:$name, value:$value")
+                        }
+
+                        override fun visitEnum(name: String?, descriptor: String?, value: String?) {
+                            super.visitEnum(name, descriptor, value)
+                            if (value != null && descriptor != null) {
+                                val annotionWrap = AnnotionWrap(descriptor, value)
+                                list.add(annotionWrap)
+                            }
+                            Log.d(TraceLogTransform.TAG, "visitArrayEnmum name:$name, value:$value, descriptor:$descriptor， listClass:${list is ArrayList<*>}")
+                        }
+                    }
+                } else {
+                    return super.visitArray(name)
                 }
+
             }
         }
     }

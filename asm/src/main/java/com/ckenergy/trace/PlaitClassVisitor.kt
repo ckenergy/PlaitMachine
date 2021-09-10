@@ -65,7 +65,7 @@ class PlaitClassVisitor(
         if (isABSClass || className.isNullOrEmpty() || !isNeedTrace) {
             return result
         }
-        if (name == "<clinit>" || "<init>" == name) {
+        if (name == "<clinit>" || "<init>" == name || "toString" == name) {
             return result
         }
         return PlaitMethodVisitor(className!!, result, access, name, descriptor)

@@ -41,9 +41,9 @@ class TraceBuildConfig(val blackListFile: String?) {
                     continue
                 }
                 val keepClass = "-keepclass "
-                val keepPackage = "-keeppackage "
+                val keepPackage = "-keep "
                 val traceClass = "-traceclass "
-                val tracePackage = "-tracepackage "
+                val tracePackage = "-trace "
                 if (black.startsWith(keepClass)) {
                     black = black.replace(keepClass, "")
                     Log.d(TraceLogTransform.TAG,"[parseBlackFile] $keepClass:$black")
@@ -110,7 +110,9 @@ class TraceBuildConfig(val blackListFile: String?) {
                     }
                 }
             }
-        }else {
+        }
+
+        if (isNeed) {
             if (mBlackClassMap.contains(clsName)) {
                 isNeed = false
             } else {

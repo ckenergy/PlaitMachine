@@ -176,7 +176,6 @@ class PlaitMethodVisitor(
             value?.forEach { (t, u) ->
                 mv.visitVarInsn(ALOAD, index + 1)
                 mv.visitLdcInsn(t)
-//                mv.visitLdcInsn(u?.toString())
                 visiteAnnotationValue(u, index + 2)
                 mv.visitMethodInsn(
                     INVOKEVIRTUAL,

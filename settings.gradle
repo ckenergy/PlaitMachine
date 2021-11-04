@@ -1,4 +1,4 @@
-rootProject.name = "TraceLog"
+rootProject.name = "plaitMachine"
 include ':app'
 include ':asm'
-include ':traceLog'
+include ':plaitmachine'

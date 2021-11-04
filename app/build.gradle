@@ -1,6 +1,6 @@
 plugins {
     id 'com.android.application'
-    id 'trace-log'
+    id 'plait-machine'
 }
 apply plugin: 'kotlin-android'
 
@@ -34,7 +34,7 @@ dependencies {
     implementation 'androidx.appcompat:appcompat:1.3.0'
     implementation 'com.google.android.material:material:1.3.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.0.4'
-    implementation project(path: ':traceLog')
+    implementation project(path: ':plaitmachine')
     testImplementation 'junit:junit:4.+'
     androidTestImplementation 'androidx.test.ext:junit:1.1.2'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
@@ -42,10 +42,20 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
 }
 
-TraceLog {
-    enable = true
+plaitMachine {
+    enable = true //是否启用
     logInfo = true
-    blackListFile = "${project.projectDir}/blacklist/blackMethodList.txt"
+    plaitClass {//要织入的方法列表
+        "com/hellotalk/tracelog/TraceTag.test" {
+            // 要织入的类名和方法名,注意只能是静态没有参数和返回值的方法
+            classList { // 需要织入的列表
+                "com/hellotalk/trace/MainActivity" { //要织入位置的类名
+                    // 要织入位置 类中的方法 默认去除了<cinit>静态初始化和<init>, toString构造函数 如果需要只需要加入就行了
+                    methodList = ["all*"]
+                }
+            }
+        }
+    }
 }
 repositories {
     mavenCentral()

@@ -4,8 +4,10 @@ import com.android.build.api.transform.*
 import com.android.build.gradle.internal.pipeline.TransformManager
 import com.android.ide.common.internal.WaitableExecutor
 import com.android.utils.FileUtils
-import com.ckenergy.trace.Contants.DEFAULT_BLACK_TRACE
-import com.ckenergy.trace.Contants.UN_TRACE_CLASS
+import com.ckenergy.trace.extension.PlaitExtension
+import com.ckenergy.trace.extension.PlaitMethodList
+import com.ckenergy.trace.extension.TraceMethodListExtension
+import org.gradle.api.NamedDomainObjectContainer
 import org.objectweb.asm.ClassReader
 import org.objectweb.asm.ClassWriter
 import java.io.ByteArrayInputStream
@@ -14,6 +16,9 @@ import java.io.FileOutputStream
 import java.io.InputStream
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
+import java.util.HashMap
+import java.util.concurrent.Executors
+import java.util.concurrent.Future
 import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
 import java.util.zip.ZipOutputStream
@@ -21,21 +26,95 @@ import java.util.zip.ZipOutputStream
 /**
  * Created by chengkai on 2021/3/5.
  */
-class TraceLogTransform : Transform() {
+class PlaintMachineTransform : Transform() {
 
     companion object {
         const val TAG = "===TraceLogTransform==="
 
-        fun newTransform(): TraceLogTransform {
-            return TraceLogTransform()
+        fun newTransform(): PlaintMachineTransform {
+            return PlaintMachineTransform()
+        }
+
+        private fun getPlaitClass(
+            className: String,
+            plaitExtension: PlaitExtension
+        ): List<PlaitMethodList>? {
+            val classNameNew = className.replace(".class", "")
+            var list: ArrayList<PlaitMethodList>? = null
+
+            plaitExtension.plaitClass.forEach { plaitClassExtension ->
+                plaitClassExtension.classList?.forEach {
+//                    println("===$TAG >>>>> className:$classNameNew Trace:${it.name},")
+                    if (classNameNew.contains(it.name) && checkInBlack(classNameNew, plaitClassExtension.blackClassList)) {
+                        if (list == null) {
+                            list = ArrayList()
+                        }
+                        val result = plaitClassExtension.name.split(".")//切分类名和方法名字
+                        if (result.size == 2) {
+                            val plaitMethodList = PlaitMethodList()
+                            plaitMethodList.plaitClass = result[0]
+                            plaitMethodList.plaitMethod = result[1]
+                            plaitMethodList.methodList = it.methodList
+                            list!!.add(plaitMethodList)
+                        }
+                    }
+                }
+            }
+            return list
+        }
+
+        private fun transformMap(plaitExtension: PlaitExtension): HashMap<String, ArrayList<PlaitMethodList>?> {
+            val map = HashMap<String, ArrayList<PlaitMethodList>?>()
+            /*
+            这里的多层嵌套循环，用map结构优化下，从
+            a[1,2,3]
+            b[1,3,4]
+            c[2,3,4]
+            转化成
+            1 -> [a,b]
+            2 -> [a,c]
+            1,2,3为需要hook方法的名字，a，b，c为要织入的方法
+             */
+            plaitExtension.plaitClass.forEach { plaitClassExtension ->
+                plaitClassExtension.classList?.forEach {
+//                    println("===$TAG >>>>> className:$classNameNew Trace:${it.name},")
+                    val black = plaitClassExtension.blackClassList?.find { it1 ->
+                        it1.name == it.name
+                    }
+                    var list = map[it.name]
+                    if (list == null) {
+                        list = ArrayList()
+                    }
+                    map.put(it.name, list)
+                    val result = plaitClassExtension.name.split(".")//切分类名和方法名字
+                    if (result.size == 2) {
+                        val plaitMethodList = PlaitMethodList()
+                        plaitMethodList.plaitClass = result[0]
+                        plaitMethodList.plaitMethod = result[1]
+                        plaitMethodList.methodList = it.methodList
+                        plaitMethodList.blackMethodList = black?.methodList
+                        list.add(plaitMethodList)
+                    }
+                }
+            }
+            return map
+        }
+
+        private fun checkInBlack(className: String, blackList: NamedDomainObjectContainer<TraceMethodListExtension>?): Boolean {
+            if (blackList.isNullOrEmpty()) return false
+            return blackList.firstOrNull {
+                className.contains(it.name)
+            } != null
         }
 
     }
 
-    var traceLogExtension: TraceLogExtension? = null
+    var traceLogExtension: PlaitExtension? = null
+
+    var traceMap: HashMap<String, ArrayList<PlaitMethodList>?>? = null
 
     //创建大小为16的线程池
-    private val executor = WaitableExecutor.useGlobalSharedThreadPool()
+    private val executor = Executors.newFixedThreadPool(16)
 
     override fun getName() = "TraceLogTransform"
 
@@ -52,23 +131,24 @@ class TraceLogTransform : Transform() {
 
     override fun transform(transformInvocation: TransformInvocation?) {
         val extension = traceLogExtension
-        val enable = extension != null && extension.enable
         val startTime = System.currentTimeMillis()
 
-        val blackListFile = extension?.blackListFile
-        val traceBuildConfig = if (!blackListFile.isNullOrEmpty()) {
-            TraceBuildConfig(blackListFile).apply {
-                parseBlackFile()
-            }
-        }else null
+        val enable = extension?.enable == true
+        if (enable) {
+            traceMap = transformMap(extension!!)
+        }
+
+        Log.d(TAG,"enable: ${enable} , traceMap:$traceMap")
 
         //是否增量编译
         val isIncremental = transformInvocation!!.isIncremental && this.isIncremental
         val outputProvider = transformInvocation.outputProvider
         val inputs = transformInvocation.inputs
 
+        val tasks = ArrayList<Future<*>>()
+
         for (input in inputs) {
-//            Log.d(TAG,"dir: ${input.directoryInputs.size}")
+            Log.d(TAG,"dir: ${input.directoryInputs.size}, isIncremental:$isIncremental")
             for (directoryInput in input.directoryInputs) {
                 val srcDir = directoryInput.file.absolutePath
 //                Log.d(TAG,"directoryInput: ${srcDir}")
@@ -85,14 +165,12 @@ class TraceLogTransform : Transform() {
                     //增量更新，只 操作有改动的文件
                     val fileStatusMap = directoryInput.changedFiles
                     fileStatusMap.forEach { (file, status) ->
-                        Log.d(TAG,"changedFiles:${file.absolutePath},status:$status")
+//                        Log.d(TAG,"changedFiles:${file.absolutePath},status:$status")
 
                         if (status == Status.ADDED || status == Status.CHANGED) {
-                            val action = if (enable) plait(file, srcDir, dest, traceBuildConfig) else null
+                            val action = if (enable) plait(file, srcDir, dest) else null
                             if (action != null) {
-                                executor.execute {
-                                    action.run()
-                                }
+                                executor.submit(action).apply { tasks.add(this) }
                             } else {
                                 FileUtils.copyFileToDirectory(file, dest)
                             }
@@ -113,11 +191,9 @@ class TraceLogTransform : Transform() {
                     if (enable) {
                         if (directoryInput.file.isDirectory) {
                             FileUtils.getAllFiles(directoryInput.file).forEach { file ->
-                                val action = plait(file, srcDir, dest, traceBuildConfig)
+                                val action = plait(file, srcDir, dest)
                                 if (action != null) {
-                                    executor.execute {
-                                        action.run()
-                                    }
+                                    executor.submit(action).apply { tasks.add(this) }
                                 } else {
                                     FileUtils.copyFileToDirectory(file, dest)
                                 }
@@ -128,7 +204,7 @@ class TraceLogTransform : Transform() {
                     }
                 }
             }
-//            Log.d(TAG,"changedJars size:${input.jarInputs.size} ,isIncremental:$isIncremental")
+//            Log.d(TAG,"changedJars size:${input.jarInputs.size}")
             for (inputJar in input.jarInputs) {
                 //将jar也加进来,androidx需要这个
                 val dest = outputProvider.getContentLocation(
@@ -138,7 +214,7 @@ class TraceLogTransform : Transform() {
                     Format.JAR
                 )
                 if (isIncremental) {//增量更新，只 操作有改动的文件
-                    Log.d(TAG,"isIncremental inputJar:${inputJar.name},status:${inputJar.status}")
+//                    Log.d(TAG,"isIncremental inputJar:${inputJar.name},status:${inputJar.status}")
                     val status = inputJar.status
                     if (status == Status.REMOVED) {
                         if (dest?.exists() == true) {
@@ -150,9 +226,7 @@ class TraceLogTransform : Transform() {
                         }
                     } else {
                         if (enable) {
-                            executor.execute {
-                                PlaitJarTask(inputJar.file, dest, traceBuildConfig).run()
-                            }
+                            executor.submit(PlaitJarTask(inputJar.file, dest, traceMap)).apply { tasks.add(this) }
                         } else {
                             FileUtils.copyFile(inputJar.file, dest)
                         }
@@ -160,9 +234,7 @@ class TraceLogTransform : Transform() {
                 } else {
 //                    Log.d(TAG,"inputJar:${inputJar.name}")
                     if (enable) {
-                        executor.execute {
-                            PlaitJarTask(inputJar.file, dest, traceBuildConfig).run()
-                        }
+                        executor.submit(PlaitJarTask(inputJar.file, dest, traceMap)).apply { tasks.add(this) }
                     } else {
                         FileUtils.copyFile(inputJar.file, dest)
                     }
@@ -170,17 +242,19 @@ class TraceLogTransform : Transform() {
             }
         }
         //等待所有任务运行完毕
-        executor.waitForTasksWithQuickFail<Runnable>(true)
+        tasks.forEach {
+            it.get()
+        }
         println("$TAG >>> timeCount：${System.currentTimeMillis() - startTime}")
     }
 
-    private fun plait(file: File, input: String, dest: File, traceBuildConfig: TraceBuildConfig?): Runnable? {
+    private fun plait(file: File, input: String, dest: File): Runnable? {
         val destName = file.absolutePath.replace(input, dest.absolutePath)
 //        Log.d(TAG,">>>>>>>>> PlaitAction filter classPath :${file.absolutePath}")
-        return PlaitAction(file, destName, traceBuildConfig)
+        return PlaitAction(file, destName, traceMap)
     }
 
-    private class PlaitAction(val file: File, val dest: String, val traceBuildConfig: TraceBuildConfig?) :
+    private class PlaitAction(val file: File, val dest: String, val map: Map<String, ArrayList<PlaitMethodList>?>?) :
         Runnable {
 
         override fun run() {
@@ -188,16 +262,16 @@ class TraceLogTransform : Transform() {
             val destDir = destFile.parentFile
             org.apache.commons.io.FileUtils.forceMkdir(destDir)
             val classPath = dest
-//            println(">>>>>>>>> classPath :$classPath")
 
             val name = file.name
-            if (traceBuildConfig?.isNeedTraceClass(name) != false) {
+//            Log.d(TAG, ">>>>>>>>> classPath :$classPath, fileName:$name")
+            if (name.endsWith(".class")) {
                 val fos = FileOutputStream(classPath)
                 try {
                     val cr = ClassReader(file.readBytes())
                     val cw = ClassWriter(cr, ClassWriter.COMPUTE_MAXS)
                     //需要处理的类使用自定义的visitor来处理
-                    val visitor = PlaitClassVisitor(cw, traceBuildConfig)
+                    val visitor = PlaitClassVisitor(cw, map)
                     cr.accept(visitor, ClassReader.EXPAND_FRAMES)
 
                     val bytes = cw.toByteArray()
@@ -220,13 +294,13 @@ class TraceLogTransform : Transform() {
     private class PlaitJarTask(
         var fromJar: File,
         val outJar: File,
-        val traceBuildConfig: TraceBuildConfig?
+        val map: Map<String, ArrayList<PlaitMethodList>?>?
     ) : Runnable {
         override fun run() {
-            innerTraceMethodFromJar(fromJar, outJar, traceBuildConfig)
+            innerTraceMethodFromJar(fromJar, outJar, map)
         }
 
-        private fun innerTraceMethodFromJar(input: File, output: File, traceBuildConfig: TraceBuildConfig?) {
+        private fun innerTraceMethodFromJar(input: File, output: File, map: Map<String, ArrayList<PlaitMethodList>?>?) {
             var zipOutputStream: ZipOutputStream? = null
             var zipFile: ZipFile? = null
             try {
@@ -238,21 +312,21 @@ class TraceLogTransform : Transform() {
                     val zipEntryName = zipEntry.name
                     val inputStream = zipFile.getInputStream(zipEntry)
 //                    println(">>>>>>>>> innerTraceMethodFromJar classPath :$zipEntryName")
-                    if (traceBuildConfig?.isNeedTraceClass(zipEntryName) != false) {
+                    val cr = ClassReader(inputStream)
+                    val cw = ClassWriter(cr, ClassWriter.COMPUTE_MAXS)
+                    //需要处理的类使用自定义的visitor来处理
+                    val visitor = PlaitClassVisitor(cw, map)
+                    cr.accept(visitor, ClassReader.EXPAND_FRAMES)
 
-                        val cr = ClassReader(inputStream)
-                        val cw = ClassWriter(cr, ClassWriter.COMPUTE_MAXS)
-                        //需要处理的类使用自定义的visitor来处理
-                        val visitor = PlaitClassVisitor(cw, traceBuildConfig)
-                        cr.accept(visitor, ClassReader.EXPAND_FRAMES)
-
-                        val bytes = cw.toByteArray()
-                        val byteArrayInputStream: InputStream = ByteArrayInputStream(bytes)
-                        val newZipEntry = ZipEntry(zipEntryName)
-                        FileUtil.addZipEntry(zipOutputStream, newZipEntry, byteArrayInputStream)
-                    }else {
-                        FileUtil.addZipEntry(zipOutputStream, zipEntry, inputStream)
-                    }
+                    val bytes = cw.toByteArray()
+                    val byteArrayInputStream: InputStream = ByteArrayInputStream(bytes)
+                    val newZipEntry = ZipEntry(zipEntryName)
+                    FileUtil.addZipEntry(zipOutputStream, newZipEntry, byteArrayInputStream)
+//                    if (map?.isNeedTraceClass(zipEntryName) != false) {
+//
+//                    }else {
+//                        FileUtil.addZipEntry(zipOutputStream, zipEntry, inputStream)
+//                    }
                 }
             } catch (e: java.lang.Exception) {
                 try {

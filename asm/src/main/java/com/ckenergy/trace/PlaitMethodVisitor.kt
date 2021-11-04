@@ -1,8 +1,8 @@
 package com.ckenergy.trace
 
+import com.ckenergy.trace.extension.PlaitMethodList
 import org.objectweb.asm.*
 import org.objectweb.asm.commons.AdviceAdapter
-import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 
@@ -11,7 +11,8 @@ class PlaitMethodVisitor(
     methodVisitor: MethodVisitor,
     access: Int,
     name: String?,
-    val descriptor: String?
+    val descriptor: String?,
+    val methodList: MutableList<PlaitMethodList>
 ) : AdviceAdapter(Contants.ASM_VERSION, methodVisitor, access, name, descriptor) {
 
     val annotations = HashMap<String, Map<String, Any?>?>()
@@ -20,19 +21,7 @@ class PlaitMethodVisitor(
     override fun onMethodEnter() {
         super.onMethodEnter()
         var traceName = "$className.$name"
-        Log.d(TraceLogTransform.TAG, "onMethodEnter name:$traceName")
-//        val start = (traceName.length - 126).coerceAtLeast(0)
-//        traceName = traceName.subSequence(start, traceName.length)//不能超过127个字符
-//        mv.visitLdcInsn(traceName)
-////        mv.visitVarInsn(ALOAD, 0)
-////        mv.visitVarInsn(ALOAD, 1)
-//        mv.visitMethodInsn(
-//            INVOKESTATIC,
-//            Contants.TRACELOG_CLASS,
-//            "i",
-//            "(Ljava/lang/String;)V",
-//            false
-//        )
+        Log.d(PlaintMachineTransform.TAG, "onMethodEnter name:$traceName")
 
         val types = Type.getArgumentTypes(descriptor)
         val size = types.size
@@ -56,13 +45,15 @@ class PlaitMethodVisitor(
         //构建traceinfo对象
         visiteTraceInfo(isStatic, traceName, objsIndex, mapIndex, traceInfoIndex)
         //注入方法
-        mv.visitVarInsn(ALOAD, traceInfoIndex)
-        mv.visitMethodInsn(
-            INVOKESTATIC,
-            Contants.TRACELOG_CLASS,
-            "test", "(L${Contants.TRACEINFO_CLASS};)V",
-            false
-        )
+        methodList.forEach {
+            mv.visitVarInsn(ALOAD, traceInfoIndex)
+            mv.visitMethodInsn(
+                INVOKESTATIC,
+                it.plaitClass,
+                it.plaitMethod, "(L${Contants.TRACEINFO_CLASS};)V",
+                false
+            )
+        }
     }
 
     // -------------
@@ -140,7 +131,7 @@ class PlaitMethodVisitor(
     }
 
     private fun visitMap(index: Int): Int {
-        Log.d(TraceLogTransform.TAG, "annotations:$annotations")
+        Log.d(PlaintMachineTransform.TAG, "annotations:$annotations")
         mv.visitTypeInsn(NEW, "java/util/HashMap")
         mv.visitInsn(DUP)
         mv.visitMethodInsn(INVOKESPECIAL, "java/util/HashMap", "<init>", "()V", false)
@@ -413,14 +404,14 @@ class PlaitMethodVisitor(
             is AnnotionWrap -> {
                 val type = Type.getType(value.desc)
                 Log.d(
-                    TraceLogTransform.TAG,
+                    PlaintMachineTransform.TAG,
                     "visiteAnnotationValue class:${type.className}, descriptor:${value.desc}"
                 )
                 mv.visitFieldInsn(GETSTATIC, type.className.replace(".", "/"), value.value, value.desc.replace(".", "/"))
             }
             else ->{
                 Log.d(
-                    TraceLogTransform.TAG,
+                    PlaintMachineTransform.TAG,
                     "visiteAnnotationValue else ${value?.javaClass}"
                 )
                 mv.visitLdcInsn(value?.toString())
@@ -435,7 +426,7 @@ class PlaitMethodVisitor(
         return object : AnnotationVisitor(Contants.ASM_VERSION) {
             override fun visit(name: String?, value: Any?) {
                 super.visit(name, value)
-                Log.d(TraceLogTransform.TAG, "visit name:$name, value:$value, class:${value is IntArray}")
+                Log.d(PlaintMachineTransform.TAG, "visit name:$name, value:$value, class:${value is IntArray}")
                 if (name != null)
                     item[name] = value
             }
@@ -443,19 +434,19 @@ class PlaitMethodVisitor(
             override fun visitEnum(name: String?, descriptor1: String, value: String?) {
                 super.visitEnum(name, descriptor1, value)
                 Log.d(
-                    TraceLogTransform.TAG,
+                    PlaintMachineTransform.TAG,
                     "visitEnum name:$name, descriptor:$descriptor1, value:$value"
                 )
                 if (name != null) item[name] = value
             }
 
             override fun visitAnnotation(name: String?, descriptor: String?): AnnotationVisitor {
-                Log.d(TraceLogTransform.TAG, "visitAnnotation name:$name, descriptor:$descriptor")
+                Log.d(PlaintMachineTransform.TAG, "visitAnnotation name:$name, descriptor:$descriptor")
                 return super.visitAnnotation(name, descriptor)
             }
 
             override fun visitArray(name: String?): AnnotationVisitor {
-                Log.d(TraceLogTransform.TAG, "visitArray name:$name")
+                Log.d(PlaintMachineTransform.TAG, "visitArray name:$name")
                 if (name != null) {
                     val list = ArrayList<Any>()
                     item[name] = list
@@ -463,7 +454,7 @@ class PlaitMethodVisitor(
                         override fun visit(name: String?, value: Any?) {
                             super.visit(name, value)
                             if (value != null) list.add(value)
-                            Log.d(TraceLogTransform.TAG, "visitArray name:$name, value:$value")
+                            Log.d(PlaintMachineTransform.TAG, "visitArray name:$name, value:$value")
                         }
 
                         override fun visitEnum(name: String?, descriptor: String?, value: String?) {
@@ -472,7 +463,7 @@ class PlaitMethodVisitor(
                                 val annotionWrap = AnnotionWrap(descriptor, value)
                                 list.add(annotionWrap)
                             }
-                            Log.d(TraceLogTransform.TAG, "visitArrayEnmum name:$name, value:$value, descriptor:$descriptor， listClass:${list is ArrayList<*>}")
+                            Log.d(PlaintMachineTransform.TAG, "visitArrayEnmum name:$name, value:$value, descriptor:$descriptor， listClass:${list is ArrayList<*>}")
                         }
                     }
                 } else {

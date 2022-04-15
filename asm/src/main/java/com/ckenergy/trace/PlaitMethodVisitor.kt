@@ -12,7 +12,7 @@ class PlaitMethodVisitor(
     access: Int,
     name: String?,
     val descriptor: String?,
-    val methodList: MutableList<PlaitMethodList>
+    val methodList: List<PlaitMethodList>
 ) : AdviceAdapter(Contants.ASM_VERSION, methodVisitor, access, name, descriptor) {
 
     val annotations = HashMap<String, Map<String, Any?>?>()

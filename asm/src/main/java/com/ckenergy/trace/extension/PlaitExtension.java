@@ -24,7 +24,9 @@ public class PlaitExtension {
             public void execute(PlaitTraceMethodExtension plaitTraceMethodExtension) {
                 System.out.println("====PlaitExtension >>> " + plaitTraceMethodExtension);
                 NamedDomainObjectContainer<TraceMethodListExtension> domainObjs1 = project.container(TraceMethodListExtension.class);
+                NamedDomainObjectContainer<TraceMethodListExtension> domainObjs2 = project.container(TraceMethodListExtension.class);
                 plaitTraceMethodExtension.classList = domainObjs1;
+                plaitTraceMethodExtension.blackClassList = domainObjs2;
             }
         });
     }

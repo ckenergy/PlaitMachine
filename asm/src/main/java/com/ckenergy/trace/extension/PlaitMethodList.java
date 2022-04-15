@@ -14,9 +14,10 @@ public class PlaitMethodList {
     @Override
     public String toString() {
         return "PlaitMethodListExtension{" +
-                "plaitClass='" + plaitClass + '\'' +
-                "plaitMethod='" + plaitMethod + '\'' +
+                "plaitClass='" + plaitClass +
+                "plaitMethod='" + plaitMethod +
                 ", methodList=" + methodList +
+                ", blackMethodList=" + blackMethodList +
                 '}';
     }
 }

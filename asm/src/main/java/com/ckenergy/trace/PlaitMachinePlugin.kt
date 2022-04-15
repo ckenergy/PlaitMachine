@@ -24,8 +24,8 @@ class PlaitMachinePlugin : Plugin<Project> {
                 val configuration: PlaitExtension? =
                     it.extensions.getByName("plaitMachine") as? PlaitExtension
 //                    it.extensions.getByName("plaitMachine") as? TraceLogExtension
-                Log.printLog = true//configuration?.logInfo ?: false fixme
-                Log.d(PlaintMachineTransform.TAG, "configuration:${configuration?.enable}, method:${configuration?.plaitClass?.asMap}")
+                Log.printLog = configuration?.logInfo ?: false
+                Log.d(PlaintMachineTransform.TAG, "afterEvaluate configuration:${configuration?.enable}, method:${configuration?.plaitClass?.asMap}")
                 //注入PlaitMachineTransform
                 transform.traceLogExtension = configuration
 

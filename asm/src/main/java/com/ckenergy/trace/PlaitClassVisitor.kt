@@ -1,14 +1,15 @@
 package com.ckenergy.trace
 
 import com.ckenergy.trace.extension.PlaitMethodList
+import com.ckenergy.trace.extension.TraceConfig
 import org.objectweb.asm.AnnotationVisitor
 import org.objectweb.asm.ClassVisitor
 import org.objectweb.asm.MethodVisitor
 import org.objectweb.asm.Opcodes
-import java.util.HashMap
+import kotlin.collections.HashMap
 
 class PlaitClassVisitor(
-    classVisitor: ClassVisitor, val traceMap: Map<String, MutableList<PlaitMethodList>?>?
+    classVisitor: ClassVisitor, val traceConfig: TraceConfig?
 ) : ClassVisitor(Contants.ASM_VERSION, classVisitor) {
 
     private var className: String? = null
@@ -19,6 +20,11 @@ class PlaitClassVisitor(
     private var isNeedTrace = true
 
     var methodListMap: HashMap<String, MutableList<PlaitMethodList>?>? = null
+    var blackMethodMap: HashMap<String, MutableList<PlaitMethodList>?>? = null
+
+    val methodlist : ArrayList<PlaitMethodList> by lazy {
+        ArrayList<PlaitMethodList>()
+    }
 
     //类入口
     override fun visit(
@@ -37,9 +43,10 @@ class PlaitClassVisitor(
             this.isABSClass = true
         }
 
-        val list = traceMap?.get(className)
+        val list = getMethodList(className, traceConfig)
 
         var map = methodListMap
+        val blackMap = HashMap<String, MutableList<PlaitMethodList>?>()
         if (list != null && map == null) {
             map = HashMap()
             /*
@@ -54,21 +61,27 @@ class PlaitClassVisitor(
              */
             list.forEach {
                 it.methodList.forEach { it1 ->
-                    val black = it.blackMethodList?.find { black ->
-                        black == Contants.ALL || black == it1
+                    var list1 = map[it1]
+                    if (list1 == null) {
+                        list1 = ArrayList()
                     }
-                    if (black.isNullOrEmpty()) {
-                        var list1 = map[it1]
-                        if (list1 == null) {
-                            list1 = ArrayList()
+                    list1.add(it)
+                    map[it1] = list1
+                }
+                it.blackMethodList?.apply {
+                    forEach {it1 ->
+                        var list2 = blackMap[it1]
+                        if (list2 == null) {
+                            list2 = ArrayList()
                         }
-                        list1.add(it)
-                        map[it1] = list1
+                        list2.add(it)
+                        blackMap[it1] = list2
                     }
                 }
             }
             methodListMap = map
-            println("==== visitMethod map:$map")
+            blackMethodMap = blackMap
+            println("==== visit map:$map, black:$blackMap")
         }
         isNeedTrace = !name.isNullOrEmpty() && !map.isNullOrEmpty()
 
@@ -94,17 +107,55 @@ class PlaitClassVisitor(
             return result
         }
         //如果为空再取一遍所有的
-        val list = methodListMap?.get(name) ?: methodListMap?.get(Contants.ALL)
-        println("visitMethod name:$name traceMethod:$list")
-        if (name == "<clinit>" || "<init>" == name || "toString" == name || list.isNullOrEmpty()) {
+        var list = methodListMap?.get(name)
+        methodListMap?.get(Contants.ALL)?.apply {
+            if (list != null) {
+                list!!.addAll(this)
+            }else {
+                list = this
+            }
+        }
+        var blackList = blackMethodMap?.get(name)
+        blackMethodMap?.get(Contants.ALL)?.apply {
+            if (blackList != null) {
+                blackList!!.addAll(this)
+            }else {
+                blackList = this
+            }
+        }
+        println("visitMethod name:$name traceMethod:$list,black:$blackList")
+        var newList: List<PlaitMethodList>? = list
+        if (!list.isNullOrEmpty() && !blackList.isNullOrEmpty()) {
+            newList = list!!.filter {
+                blackList!!.find { it1 -> it.plaitClass == it1.plaitClass && it.plaitMethod == it1.plaitMethod } == null
+            }
+        }
+        println("visitMethod name:$name filterList:$newList")
+        if (name == "<clinit>" || "<init>" == name || "toString" == name || newList.isNullOrEmpty()) {
             return result
         }
-        return PlaitMethodVisitor(className!!, result, access, name, descriptor, list)
+        return PlaitMethodVisitor(className!!, result, access, name, descriptor, newList)
     }
 
     override fun visitAnnotation(descriptor: String?, visible: Boolean): AnnotationVisitor {
 //        println("visitAnnotation descriptor:$descriptor, visible:$visible")
         return super.visitAnnotation(descriptor, visible)
+    }
+
+    private fun getMethodList(className: String?, traceConfig: TraceConfig?): MutableList<PlaitMethodList>? {
+        if (className.isNullOrEmpty() || traceConfig == null || traceConfig.traceMap.isNullOrEmpty() || traceConfig.packages.isNullOrEmpty()) return null
+
+        traceConfig.packages?.forEach {
+            if (className.contains(it.key.substring(0, it.key.length-1)) && it.value != null) {
+                methodlist.addAll(it.value!!)
+            }
+        }
+        traceConfig.traceMap?.get(className)?.apply {
+            methodlist.addAll(this)
+        }
+        traceConfig.blackPackages//fixme
+
+        return methodlist
     }
 
 }

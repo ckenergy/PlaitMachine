@@ -43,27 +43,26 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             byteRes = {10,11},
             chatRes = {'a','b'},
         byteType = 1, shortType = 2, longType = 3, charType = 'c', booleanType = true, floatType = 5.5f, doubleType = 6.6)
-    private static void doSome(int type, String name, float f, boolean su, List<String> ars) {
+    private void doSome(int type, String name, float f, boolean su, List<String> ars) {
         Log.e("main", "doSome");
-//        new Thread(new Runnable() {
-//            @Override
-//            public void run() {
-//                doSome1();
-//            }
-//        }).start();
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                doSome1();
+            }
+        }).start();
 
         TestIgnore.INSTANCE.doSomeInIgnore();
     }
 
-//    private void doSome1() {
-//        Log.e("main", "doSome1");
-//        try {
-//            Thread.sleep(2000);
-//        } catch (InterruptedException e) {
-//            e.printStackTrace();
-//        }
-//    }
-
+    private void doSome1() {
+        Log.e("main", "doSome1");
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
 
     @Override
     public void onClick(View v) {

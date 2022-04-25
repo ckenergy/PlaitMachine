@@ -53,10 +53,11 @@ class PlaintMachineTransform : Transform() {
                 plaitClassExtension.classList?.forEach {
 //                    println("===$TAG >>>>> className:$classNameNew Trace:${it.name},")
                     val map: HashMap<String, ArrayList<PlaitMethodList>?>
-                    val black = if (!it.name.endsWith("*")) {
+//                    val black = if (!it.name.endsWith("*")) {暂时不处理
+                    val black = if (false) {
                         map = traceMap
-                        plaitClassExtension.blackClassList?.find { it1 ->
-                            it1.name == it.name || it.name.contains(it1.name.replace("*", ""))
+                        plaitClassExtension.blackClassList?.find { it1 -> //com.hh.cc  ,black: com.hh.*
+                            (it1.name == it.name || it.name.contains(it1.name.replace("*", ""))) && it1.methodList.find { it2 -> it2 == "all*" } == null
                         }
                     } else {
                         map = packages
@@ -79,21 +80,21 @@ class PlaintMachineTransform : Transform() {
                 }
                 plaitClassExtension.blackClassList?.forEach {
 //                    println("===$TAG >>>>> className:$classNameNew Trace:${it.name},")
-                    if (it.name.endsWith("*")) {
-                        var list1 = blackPackages[it.name]
-                        if (list1 == null) {
-                            list1 = ArrayList()
-                        }
-                        blackPackages.put(it.name, list1)
-                        val result = plaitClassExtension.name.split(".")//切分类名和方法名字
-                        if (result.size == 2) {
-                            val plaitMethodList = PlaitMethodList()
-                            plaitMethodList.plaitClass = result[0]
-                            plaitMethodList.plaitMethod = result[1]
-                            plaitMethodList.methodList = it.methodList
-                            list1.add(plaitMethodList)
-                        }
+                    var list1 = blackPackages[it.name]
+                    if (list1 == null) {
+                        list1 = ArrayList()
                     }
+                    blackPackages.put(it.name, list1)
+                    val result = plaitClassExtension.name.split(".")//切分类名和方法名字
+                    if (result.size == 2) {
+                        val plaitMethodList = PlaitMethodList()
+                        plaitMethodList.plaitClass = result[0]
+                        plaitMethodList.plaitMethod = result[1]
+                        plaitMethodList.methodList = it.methodList
+                        list1.add(plaitMethodList)
+                    }
+//                    if (it.name.endsWith("*")) {
+//                    }
 
                 }
             }
@@ -131,7 +132,6 @@ class PlaintMachineTransform : Transform() {
 
     //是否支持增量更新
     override fun isIncremental() = true
-
 
     override fun transform(transformInvocation: TransformInvocation?) {
         val extension = traceLogExtension

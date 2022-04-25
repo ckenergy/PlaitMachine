@@ -22,10 +22,6 @@ class PlaitClassVisitor(
     var methodListMap: HashMap<String, MutableList<PlaitMethodList>?>? = null
     var blackMethodMap: HashMap<String, MutableList<PlaitMethodList>?>? = null
 
-    val methodlist : ArrayList<PlaitMethodList> by lazy {
-        ArrayList<PlaitMethodList>()
-    }
-
     //类入口
     override fun visit(
         version: Int,
@@ -44,11 +40,15 @@ class PlaitClassVisitor(
         }
 
         val list = getMethodList(className, traceConfig)
+        val blackList = getBlackMethodList(className, traceConfig)
 
-        var map = methodListMap
+//        if (className?.contains("Main") == true) {
+//            Log.d(PlaintMachineTransform.TAG, "==== visit:$name list:$list, blackList:$blackList")
+//        }
+
+        val map = HashMap<String, MutableList<PlaitMethodList>?>()
         val blackMap = HashMap<String, MutableList<PlaitMethodList>?>()
-        if (list != null && map == null) {
-            map = HashMap()
+        if (list != null) {
             /*
             这里的多层嵌套循环，用map结构优化下，从
             a[1,2,3]
@@ -68,7 +68,23 @@ class PlaitClassVisitor(
                     list1.add(it)
                     map[it1] = list1
                 }
-                it.blackMethodList?.apply {
+            }
+            methodListMap = map
+        }
+
+        if (blackList != null) {
+            /*
+            这里的多层嵌套循环，用map结构优化下，从
+            a[1,2,3]
+            b[1,3,4]
+            c[2,3,4]
+            转化成
+            1 -> [a,b]
+            2 -> [a,c]
+            1,2,3为需要hook方法的名字，a，b，c为要织入的方法
+             */
+            blackList.forEach {
+                it.methodList?.apply {
                     forEach {it1 ->
                         var list2 = blackMap[it1]
                         if (list2 == null) {
@@ -79,9 +95,10 @@ class PlaitClassVisitor(
                     }
                 }
             }
-            methodListMap = map
             blackMethodMap = blackMap
-            println("==== visit map:$map, black:$blackMap")
+        }
+        if (className?.contains("Main") == true) {
+            Log.d(PlaintMachineTransform.TAG, "==== visit map:$map, black:$blackMap")
         }
         isNeedTrace = !name.isNullOrEmpty() && !map.isNullOrEmpty()
 
@@ -123,14 +140,14 @@ class PlaitClassVisitor(
                 blackList = this
             }
         }
-        println("visitMethod name:$name traceMethod:$list,black:$blackList")
+        Log.d(PlaintMachineTransform.TAG,"visitMethod name:$name traceMethod:$list,black:$blackList")
         var newList: List<PlaitMethodList>? = list
         if (!list.isNullOrEmpty() && !blackList.isNullOrEmpty()) {
             newList = list!!.filter {
                 blackList!!.find { it1 -> it.plaitClass == it1.plaitClass && it.plaitMethod == it1.plaitMethod } == null
             }
         }
-        println("visitMethod name:$name filterList:$newList")
+        Log.d(PlaintMachineTransform.TAG,"visitMethod name:$name filterList:$newList")
         if (name == "<clinit>" || "<init>" == name || "toString" == name || newList.isNullOrEmpty()) {
             return result
         }
@@ -143,17 +160,29 @@ class PlaitClassVisitor(
     }
 
     private fun getMethodList(className: String?, traceConfig: TraceConfig?): MutableList<PlaitMethodList>? {
-        if (className.isNullOrEmpty() || traceConfig == null || traceConfig.traceMap.isNullOrEmpty() || traceConfig.packages.isNullOrEmpty()) return null
+        if (className.isNullOrEmpty() || traceConfig == null || (traceConfig.traceMap.isNullOrEmpty() && traceConfig.packages.isNullOrEmpty())) return null
+
+        val methodlist = arrayListOf<PlaitMethodList>()
 
         traceConfig.packages?.forEach {
-            if (className.contains(it.key.substring(0, it.key.length-1)) && it.value != null) {
+            if (className.contains(it.key.replace("*", "")) && it.value != null) {
                 methodlist.addAll(it.value!!)
             }
         }
         traceConfig.traceMap?.get(className)?.apply {
             methodlist.addAll(this)
         }
-        traceConfig.blackPackages//fixme
+        return methodlist
+    }
+
+    private fun getBlackMethodList(className: String?, traceConfig: TraceConfig?): MutableList<PlaitMethodList>? {
+        if (className.isNullOrEmpty() || traceConfig == null || traceConfig.blackPackages.isNullOrEmpty()) return null
+        val methodlist = arrayListOf<PlaitMethodList>()
+        traceConfig.blackPackages?.forEach {
+            if (className.contains(it.key.replace("*", "")) && it.value != null) {
+                methodlist.addAll(it.value!!)
+            }
+        }
 
         return methodlist
     }

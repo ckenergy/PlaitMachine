@@ -46,7 +46,7 @@ plaitMachine {
     enable = true //是否启用
     logInfo = true
     plaitClass {//要织入的方法列表
-        "com/hellotalk/tracelog/TraceTag.test3" {
+        "com/hellotalk/tracelog/TraceTag.test" {
             // 要织入的类名和方法名,注意只能是静态没有参数和返回值的方法
             classList { // 需要织入的列表
                 "com/hellotalk/trace/MainActivity" { //要织入位置的类名

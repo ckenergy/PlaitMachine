@@ -80,10 +80,7 @@ class PlaintMachineTransform : Transform() {
                 }
                 plaitClassExtension.blackClassList?.forEach {
 //                    println("===$TAG >>>>> className:$classNameNew Trace:${it.name},")
-                    var list1 = blackPackages[it.name]
-                    if (list1 == null) {
-                        list1 = ArrayList()
-                    }
+                    val list1 = blackPackages[it.name] ?: ArrayList()
                     blackPackages.put(it.name, list1)
                     val result = plaitClassExtension.name.split(".")//切分类名和方法名字
                     if (result.size == 2) {
@@ -92,10 +89,16 @@ class PlaintMachineTransform : Transform() {
                         plaitMethodList.plaitMethod = result[1]
                         plaitMethodList.methodList = it.methodList
                         list1.add(plaitMethodList)
-                    }
-//                    if (it.name.endsWith("*")) {
-//                    }
 
+                        //要插入的方法也加入到黑名单，避免造成循环调用
+                        val list2 = blackPackages[plaitMethodList.plaitClass] ?: ArrayList()
+                        blackPackages.put(plaitMethodList.plaitClass, list2)
+                        list2.add(PlaitMethodList().apply {
+                            plaitClass = plaitMethodList.plaitClass
+                            plaitMethod = plaitMethodList.plaitMethod
+                            methodList = listOf(plaitMethodList.plaitMethod)
+                        })
+                    }
                 }
             }
             return TraceConfig(traceMap, packages, blackPackages)
@@ -142,7 +145,7 @@ class PlaintMachineTransform : Transform() {
             traceConfig = transformMap(extension!!)
         }
 
-        Log.d(TAG, "enable: ${enable} , traceMap:$traceConfig")
+        Log.d(TAG, "enable: $enable , traceMap:$traceConfig")
 
         //是否增量编译
         val isIncremental = transformInvocation!!.isIncremental && this.isIncremental

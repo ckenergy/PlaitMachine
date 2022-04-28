@@ -1,4 +1,4 @@
-package com.hellotalk.trace.ignore
+package com.ckenergy.trace
 
 import android.util.Log
 

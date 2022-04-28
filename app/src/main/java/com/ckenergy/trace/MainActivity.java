@@ -1,4 +1,4 @@
-package com.hellotalk.trace;
+package com.ckenergy.trace;
 
 import android.os.Build;
 import android.os.Bundle;
@@ -7,10 +7,6 @@ import android.view.View;
 
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
-
-import com.hellotalk.trace.ignore.TestIgnore;
-import com.hellotalk.tracelog.TestTrace;
-import com.hellotalk.tracelog.TraceType;
 
 import java.util.ArrayList;
 import java.util.List;

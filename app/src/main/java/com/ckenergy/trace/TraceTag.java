@@ -1,9 +1,11 @@
-package com.hellotalk.tracelog;
+package com.ckenergy.trace;
 
 import android.annotation.TargetApi;
 import android.os.Build;
 import android.os.Trace;
 import android.util.Log;
+
+import com.ckenergy.tracelog.TraceInfo;
 
 import java.util.Arrays;
 import java.util.HashMap;

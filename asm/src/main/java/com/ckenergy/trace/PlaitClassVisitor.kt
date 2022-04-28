@@ -8,6 +8,7 @@ import org.objectweb.asm.MethodVisitor
 import org.objectweb.asm.Opcodes
 import kotlin.collections.HashMap
 
+private const val TAG = "===PlaitClassVisitor==="
 class PlaitClassVisitor(
     classVisitor: ClassVisitor, val traceConfig: TraceConfig?
 ) : ClassVisitor(Contants.ASM_VERSION, classVisitor) {
@@ -17,7 +18,7 @@ class PlaitClassVisitor(
 
     private var isABSClass = false
     
-    private var isNeedTrace = true
+    private var isNeedTrace = false
 
     var methodListMap: HashMap<String, MutableList<PlaitMethodList>?>? = null
     var blackMethodMap: HashMap<String, MutableList<PlaitMethodList>?>? = null
@@ -42,9 +43,9 @@ class PlaitClassVisitor(
         val list = getMethodList(className, traceConfig)
         val blackList = getBlackMethodList(className, traceConfig)
 
-//        if (className?.contains("Main") == true) {
-//            Log.d(PlaintMachineTransform.TAG, "==== visit:$name list:$list, blackList:$blackList")
-//        }
+        if (className?.contains("trace") == true) {
+            Log.d(TAG, "==== visit main:$name list:$list, blackList:$blackList")
+        }
 
         val map = HashMap<String, MutableList<PlaitMethodList>?>()
         val blackMap = HashMap<String, MutableList<PlaitMethodList>?>()
@@ -97,13 +98,13 @@ class PlaitClassVisitor(
             }
             blackMethodMap = blackMap
         }
-        if (className?.contains("Main") == true) {
-            Log.d(PlaintMachineTransform.TAG, "==== visit map:$map, black:$blackMap")
+        if (className?.contains("trace") == true) {
+            Log.d(TAG, "==== visit name:$name, map:$map, black:$blackMap")
         }
         isNeedTrace = !name.isNullOrEmpty() && !map.isNullOrEmpty()
 
         if(isNeedTrace && !isABSClass) {
-            Log.d(PlaintMachineTransform.TAG, "visit name:$name, superName:$superName，interfaces：${interfaces?.asList()}")
+            Log.d(TAG, "visit NeedTrace name:$name")
         }
     }
 
@@ -140,14 +141,14 @@ class PlaitClassVisitor(
                 blackList = this
             }
         }
-        Log.d(PlaintMachineTransform.TAG,"visitMethod name:$name traceMethod:$list,black:$blackList")
+//        Log.d(PlaintMachineTransform.TAG,"visitMethod name:$name traceMethod:$list,black:$blackList")
         var newList: List<PlaitMethodList>? = list
         if (!list.isNullOrEmpty() && !blackList.isNullOrEmpty()) {
             newList = list!!.filter {
                 blackList!!.find { it1 -> it.plaitClass == it1.plaitClass && it.plaitMethod == it1.plaitMethod } == null
             }
         }
-        Log.d(PlaintMachineTransform.TAG,"visitMethod name:$name filterList:$newList")
+//        Log.d(PlaintMachineTransform.TAG,"visitMethod name:$name filterList:$newList")
         if (name == "<clinit>" || "<init>" == name || "toString" == name || newList.isNullOrEmpty()) {
             return result
         }

@@ -50,7 +50,7 @@ class PlaitMethodVisitor(
             mv.visitMethodInsn(
                 INVOKESTATIC,
                 it.plaitClass,
-                it.plaitMethod, "(L${Contants.TRACEINFO_CLASS};)V",
+                it.plaitMethod, "(L${Contants.TRACE_INFO_CLASS};)V",
                 false
             )
         }
@@ -167,7 +167,7 @@ class PlaitMethodVisitor(
             value?.forEach { (t, u) ->
                 mv.visitVarInsn(ALOAD, index + 1)
                 mv.visitLdcInsn(t)
-                visiteAnnotationValue(u, index + 2)
+                visitAnnotationValue(u, index + 2)
                 mv.visitMethodInsn(
                     INVOKEVIRTUAL,
                     "java/util/HashMap",
@@ -199,7 +199,7 @@ class PlaitMethodVisitor(
         mapIndex: Int,
         traceInfoIndex: Int
     ) {
-        mv.visitTypeInsn(NEW, Contants.TRACEINFO_CLASS)
+        mv.visitTypeInsn(NEW, Contants.TRACE_INFO_CLASS)
         mv.visitInsn(DUP)
         mv.visitLdcInsn(traceName)
         if (isStatic) {
@@ -211,7 +211,7 @@ class PlaitMethodVisitor(
         mv.visitVarInsn(ALOAD, mapIndex)
         mv.visitMethodInsn(
             INVOKESPECIAL,
-            Contants.TRACEINFO_CLASS,
+            Contants.TRACE_INFO_CLASS,
             "<init>",
             "(Ljava/lang/String;Ljava/lang/Object;[Ljava/lang/Object;Ljava/util/HashMap;)V",
             false
@@ -222,16 +222,9 @@ class PlaitMethodVisitor(
     override fun onMethodExit(opcode: Int) {
         super.onMethodExit(opcode)
 //        Log.d(TraceLogTransform.TAG,"onMethodExit name:$name")
-        mv.visitMethodInsn(
-            INVOKESTATIC,
-            Contants.TRACELOG_CLASS,
-            "o",
-            "()V",
-            false
-        )
     }
 
-    private fun visiteAnnotationValue(value: Any?, nextIndex: Int) {
+    private fun visitAnnotationValue(value: Any?, nextIndex: Int) {
         fun eachLoad(listIndex: Int, listValue: Any) {
             mv.visitVarInsn(ALOAD, nextIndex)
             mv.visitLdcInsn(listIndex)

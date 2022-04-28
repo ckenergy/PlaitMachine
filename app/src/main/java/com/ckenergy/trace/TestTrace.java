@@ -1,4 +1,4 @@
-package com.hellotalk.tracelog;
+package com.ckenergy.trace;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;

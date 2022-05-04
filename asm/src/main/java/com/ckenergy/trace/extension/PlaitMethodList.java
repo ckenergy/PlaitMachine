@@ -13,7 +13,7 @@ public class PlaitMethodList {
 
     @Override
     public String toString() {
-        return ",PlaitMethodListExtension{" +
+        return "PlaitMethodListExtension{" +
                 ",plaitClass='" + plaitClass +
                 ",plaitMethod='" + plaitMethod +
                 ", methodList=" + methodList +

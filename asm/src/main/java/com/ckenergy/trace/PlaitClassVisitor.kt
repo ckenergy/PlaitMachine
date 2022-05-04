@@ -22,6 +22,9 @@ class PlaitClassVisitor(
 
     var methodListMap: HashMap<String, MutableList<PlaitMethodList>?>? = null
     var blackMethodMap: HashMap<String, MutableList<PlaitMethodList>?>? = null
+    private val classAnoList by lazy {
+        ArrayList<String>()
+    }
 
     //类入口
     override fun visit(
@@ -133,6 +136,12 @@ class PlaitClassVisitor(
                 list = this
             }
         }
+        val anonList = hashMapOf<String, List<PlaitMethodList>?>()
+        methodListMap?.forEach {
+            if (it.key.contains("@")) {
+                anonList[it.key.replace("@","L")] = it.value
+            }
+        }
         var blackList = blackMethodMap?.get(name)
         blackMethodMap?.get(Contants.ALL)?.apply {
             if (blackList != null) {
@@ -148,15 +157,20 @@ class PlaitClassVisitor(
                 blackList!!.find { it1 -> it.plaitClass == it1.plaitClass && it.plaitMethod == it1.plaitMethod } == null
             }
         }
-//        Log.d(PlaintMachineTransform.TAG,"visitMethod name:$name filterList:$newList")
-        if (name == "<clinit>" || "<init>" == name || "toString" == name || newList.isNullOrEmpty()) {
+        Log.d(TAG,"visitMethod name:$className.$name filterList:$newList")
+        Log.d(TAG,"visitMethod name:$className.$name anonList:$anonList")
+        if (name == "<clinit>" || "<init>" == name || "toString" == name
+            || (newList.isNullOrEmpty() && anonList.isNullOrEmpty())) {
+                Log.d(TAG, "visitMethod name:$className.$name list is empty")
             return result
         }
-        return PlaitMethodVisitor(className!!, result, access, name, descriptor, newList)
+        return PlaitMethodVisitor(className!!, result, access, name, descriptor, newList, anonList)
     }
 
     override fun visitAnnotation(descriptor: String?, visible: Boolean): AnnotationVisitor {
-//        println("visitAnnotation descriptor:$descriptor, visible:$visible")
+//        Log.d(TAG, "visitAnnotation descriptor:$descriptor, visible:$visible")
+        if(!descriptor.isNullOrBlank())
+            classAnoList.add(descriptor)
         return super.visitAnnotation(descriptor, visible)
     }
 
@@ -166,8 +180,13 @@ class PlaitClassVisitor(
         val methodlist = arrayListOf<PlaitMethodList>()
 
         traceConfig.packages?.forEach {
-            if (className.contains(it.key.replace("*", "")) && it.value != null) {
-                methodlist.addAll(it.value!!)
+            if (it.value != null) {
+                if (className.contains(it.key.replace("*", ""))) {
+                    methodlist.addAll(it.value!!)
+                }
+                if (classAnoList.contains(it.key.replace("@", "L"))) {
+                    methodlist.addAll(it.value!!)
+                }
             }
         }
         traceConfig.traceMap?.get(className)?.apply {
@@ -180,8 +199,13 @@ class PlaitClassVisitor(
         if (className.isNullOrEmpty() || traceConfig == null || traceConfig.blackPackages.isNullOrEmpty()) return null
         val methodlist = arrayListOf<PlaitMethodList>()
         traceConfig.blackPackages?.forEach {
-            if (className.contains(it.key.replace("*", "")) && it.value != null) {
-                methodlist.addAll(it.value!!)
+            if (it.value != null) {
+                if (className.contains(it.key.replace("*", ""))) {
+                    methodlist.addAll(it.value!!)
+                }
+                if (classAnoList.contains(it.key.replace("@", "L"))) {
+                    methodlist.addAll(it.value!!)
+                }
             }
         }
 

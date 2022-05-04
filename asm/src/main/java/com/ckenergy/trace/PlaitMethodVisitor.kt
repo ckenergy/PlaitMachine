@@ -6,13 +6,15 @@ import org.objectweb.asm.commons.AdviceAdapter
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 
-class PlaitMethodVisitor(
+private const val TAG = "===PlaitMethodVisitor==="
+class PlaitMethodVisitor @JvmOverloads constructor(
     val className: String,
     methodVisitor: MethodVisitor,
     access: Int,
     name: String?,
     val descriptor: String?,
-    val methodList: List<PlaitMethodList>
+    val methodList: List<PlaitMethodList>?,
+    val annoMap: Map<String, List<PlaitMethodList>?>? = null
 ) : AdviceAdapter(Contants.ASM_VERSION, methodVisitor, access, name, descriptor) {
 
     val annotations = HashMap<String, Map<String, Any?>?>()
@@ -21,7 +23,7 @@ class PlaitMethodVisitor(
     override fun onMethodEnter() {
         super.onMethodEnter()
         var traceName = "$className.$name"
-        Log.d(PlaintMachineTransform.TAG, "onMethodEnter name:$traceName")
+        Log.d(TAG, "onMethodEnter name:$traceName")
 
         val types = Type.getArgumentTypes(descriptor)
         val size = types.size
@@ -44,8 +46,21 @@ class PlaitMethodVisitor(
         val traceInfoIndex = mapIndex + 1
         //构建traceinfo对象
         visiteTraceInfo(isStatic, traceName, objsIndex, mapIndex, traceInfoIndex)
+        val newMethodList = arrayListOf<PlaitMethodList>()
+        if (!annoMap.isNullOrEmpty()) {
+            annotations.forEach {
+                annoMap[it.key]?.apply {
+                    newMethodList.addAll(this)
+                }
+            }
+        }
+
+        if (!methodList.isNullOrEmpty())
+            newMethodList.addAll(methodList)
+        Log.d(TAG, "newMethodList:$newMethodList,name:$className.$name")
         //注入方法
-        methodList.forEach {
+        if (newMethodList.isNullOrEmpty()) return
+        newMethodList.forEach {
             mv.visitVarInsn(ALOAD, traceInfoIndex)
             mv.visitMethodInsn(
                 INVOKESTATIC,
@@ -131,7 +146,7 @@ class PlaitMethodVisitor(
     }
 
     private fun visitMap(index: Int): Int {
-        Log.d(PlaintMachineTransform.TAG, "annotations:$annotations")
+        Log.d(TAG, "annotations:$annotations")
         mv.visitTypeInsn(NEW, "java/util/HashMap")
         mv.visitInsn(DUP)
         mv.visitMethodInsn(INVOKESPECIAL, "java/util/HashMap", "<init>", "()V", false)
@@ -221,7 +236,7 @@ class PlaitMethodVisitor(
 
     override fun onMethodExit(opcode: Int) {
         super.onMethodExit(opcode)
-//        Log.d(TraceLogTransform.TAG,"onMethodExit name:$name")
+        Log.d(TAG,"onMethodExit name:$name")
     }
 
     private fun visitAnnotationValue(value: Any?, nextIndex: Int) {
@@ -317,7 +332,7 @@ class PlaitMethodVisitor(
                     "valueOf",
                     "(I)Ljava/lang/Integer;",
                     false
-                );
+                )
             }
             is Short -> {
                 mv.visitLdcInsn(value)
@@ -327,7 +342,7 @@ class PlaitMethodVisitor(
                     "valueOf",
                     "(S)Ljava/lang/Short;",
                     false
-                );
+                )
             }
             is Boolean -> {
                 mv.visitLdcInsn(value)
@@ -337,7 +352,7 @@ class PlaitMethodVisitor(
                     "valueOf",
                     "(Z)Ljava/lang/Boolean;",
                     false
-                );
+                )
             }
             is Char -> {
                 mv.visitLdcInsn(value)
@@ -347,7 +362,7 @@ class PlaitMethodVisitor(
                     "valueOf",
                     "(C)Ljava/lang/Character;",
                     false
-                );
+                )
             }
             is Byte -> {
                 mv.visitLdcInsn(value)
@@ -357,7 +372,7 @@ class PlaitMethodVisitor(
                     "valueOf",
                     "(B)Ljava/lang/Byte;",
                     false
-                );
+                )
             }
             is Float -> {
                 mv.visitLdcInsn(value)
@@ -367,7 +382,7 @@ class PlaitMethodVisitor(
                     "valueOf",
                     "(F)Ljava/lang/Float;",
                     false
-                );
+                )
 
             }
             is Double -> {
@@ -378,7 +393,7 @@ class PlaitMethodVisitor(
                     "valueOf",
                     "(D)Ljava/lang/Double;",
                     false
-                );
+                )
 
             }
             is Long -> {
@@ -389,7 +404,7 @@ class PlaitMethodVisitor(
                     "valueOf",
                     "(J)Ljava/lang/Long;",
                     false
-                );
+                )
             }
             is String -> {
                 mv.visitLdcInsn(value)
@@ -397,14 +412,15 @@ class PlaitMethodVisitor(
             is AnnotionWrap -> {
                 val type = Type.getType(value.desc)
                 Log.d(
-                    PlaintMachineTransform.TAG,
+                    TAG,
                     "visiteAnnotationValue class:${type.className}, descriptor:${value.desc}"
                 )
-                mv.visitFieldInsn(GETSTATIC, type.className.replace(".", "/"), value.value, value.desc.replace(".", "/"))
+                mv.visitFieldInsn(GETSTATIC, type.className.replace(".", "/"),
+                    value.value, value.desc.replace(".", "/"))
             }
             else ->{
                 Log.d(
-                    PlaintMachineTransform.TAG,
+                    TAG,
                     "visiteAnnotationValue else ${value?.javaClass}"
                 )
                 mv.visitLdcInsn(value?.toString())
@@ -413,13 +429,14 @@ class PlaitMethodVisitor(
     }
 
     override fun visitAnnotation(descriptor: String, visible: Boolean): AnnotationVisitor {
-//        println("visitAnnotation descriptor:$descriptor, visible:$visible")
-        val item = annotations[descriptor] as? HashMap ?: HashMap()
-        annotations[descriptor] = item
+        Log.d(TAG, "visitAnnotation descriptor:$descriptor, visible:$visible")
+        val key = descriptor.replace(";","")
+        val item = annotations[key] as? HashMap ?: HashMap()
+        annotations[key] = item
         return object : AnnotationVisitor(Contants.ASM_VERSION) {
             override fun visit(name: String?, value: Any?) {
                 super.visit(name, value)
-                Log.d(PlaintMachineTransform.TAG, "visit name:$name, value:$value, class:${value is IntArray}")
+                Log.d(TAG, "visit name:$name, value:$value")
                 if (name != null)
                     item[name] = value
             }
@@ -427,19 +444,19 @@ class PlaitMethodVisitor(
             override fun visitEnum(name: String?, descriptor1: String, value: String?) {
                 super.visitEnum(name, descriptor1, value)
                 Log.d(
-                    PlaintMachineTransform.TAG,
+                    TAG,
                     "visitEnum name:$name, descriptor:$descriptor1, value:$value"
                 )
                 if (name != null) item[name] = value
             }
 
             override fun visitAnnotation(name: String?, descriptor: String?): AnnotationVisitor {
-                Log.d(PlaintMachineTransform.TAG, "visitAnnotation name:$name, descriptor:$descriptor")
+                Log.d(TAG, "visitAnnotation name:$name, descriptor:$descriptor")
                 return super.visitAnnotation(name, descriptor)
             }
 
             override fun visitArray(name: String?): AnnotationVisitor {
-                Log.d(PlaintMachineTransform.TAG, "visitArray name:$name")
+                Log.d(TAG, "visitArray name:$name")
                 if (name != null) {
                     val list = ArrayList<Any>()
                     item[name] = list
@@ -447,7 +464,7 @@ class PlaitMethodVisitor(
                         override fun visit(name: String?, value: Any?) {
                             super.visit(name, value)
                             if (value != null) list.add(value)
-                            Log.d(PlaintMachineTransform.TAG, "visitArray name:$name, value:$value")
+                            Log.d(TAG, "visitArray name:$name, value:$value")
                         }
 
                         override fun visitEnum(name: String?, descriptor: String?, value: String?) {
@@ -456,7 +473,7 @@ class PlaitMethodVisitor(
                                 val annotionWrap = AnnotionWrap(descriptor, value)
                                 list.add(annotionWrap)
                             }
-                            Log.d(PlaintMachineTransform.TAG, "visitArrayEnmum name:$name, value:$value, descriptor:$descriptor， listClass:${list is ArrayList<*>}")
+                            Log.d(TAG, "visitArrayEnmum name:$name, value:$value, descriptor:$descriptor， listClass:${list is ArrayList<*>}")
                         }
                     }
                 } else {

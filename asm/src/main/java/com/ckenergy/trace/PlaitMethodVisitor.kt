@@ -14,7 +14,8 @@ class PlaitMethodVisitor @JvmOverloads constructor(
     name: String?,
     val descriptor: String?,
     val methodList: List<PlaitMethodList>?,
-    val annoMap: Map<String, List<PlaitMethodList>?>? = null
+    val annoMap: Map<String, List<PlaitMethodList>?>? = null,
+    val blackAnnoMap: Map<String, List<PlaitMethodList>?>? = null,
 ) : AdviceAdapter(Contants.ASM_VERSION, methodVisitor, access, name, descriptor) {
 
     val annotations = HashMap<String, Map<String, Any?>?>()
@@ -46,18 +47,35 @@ class PlaitMethodVisitor @JvmOverloads constructor(
         val traceInfoIndex = mapIndex + 1
         //构建traceinfo对象
         visiteTraceInfo(isStatic, traceName, objsIndex, mapIndex, traceInfoIndex)
-        val newMethodList = arrayListOf<PlaitMethodList>()
+        var temMethodList = arrayListOf<PlaitMethodList>()
         if (!annoMap.isNullOrEmpty()) {
             annotations.forEach {
                 annoMap[it.key]?.apply {
-                    newMethodList.addAll(this)
+                    temMethodList.addAll(this)
                 }
             }
         }
 
         if (!methodList.isNullOrEmpty())
-            newMethodList.addAll(methodList)
+            temMethodList.addAll(methodList)
+        Log.d(TAG, "temMethodList:$temMethodList,name:$className.$name")
+
+        val blackMethodList = arrayListOf<PlaitMethodList>()
+        if (!blackAnnoMap.isNullOrEmpty()) {
+            annotations.forEach {
+                blackAnnoMap[it.key]?.apply {
+                    blackMethodList.addAll(this)
+                }
+            }
+        }
+        Log.d(TAG, "blackMethodList:$blackMethodList,name:$className.$name")
+
+        //todo 优化算法
+        val newMethodList = temMethodList.filter { it1->
+            blackMethodList.find { it.plaitClass == it1.plaitClass && it.plaitMethod == it1.plaitMethod } == null
+        }
         Log.d(TAG, "newMethodList:$newMethodList,name:$className.$name")
+
         //注入方法
         if (newMethodList.isNullOrEmpty()) return
         newMethodList.forEach {

@@ -88,15 +88,13 @@ class PlaitClassVisitor(
             1,2,3为需要hook方法的名字，a，b，c为要织入的方法
              */
             blackList.forEach {
-                it.methodList?.apply {
-                    forEach {it1 ->
-                        var list2 = blackMap[it1]
-                        if (list2 == null) {
-                            list2 = ArrayList()
-                        }
-                        list2.add(it)
-                        blackMap[it1] = list2
+                it.methodList?.onEach { it1 ->
+                    var list2 = blackMap[it1]
+                    if (list2 == null) {
+                        list2 = ArrayList()
                     }
+                    list2.add(it)
+                    blackMap[it1] = list2
                 }
             }
             blackMethodMap = blackMap
@@ -150,21 +148,28 @@ class PlaitClassVisitor(
                 blackList = this
             }
         }
+        val blackAnonList = hashMapOf<String, List<PlaitMethodList>?>()
+        blackMethodMap?.forEach {
+            if (it.key.contains("@")) {
+                blackAnonList[it.key.replace("@","L")] = it.value
+            }
+        }
 //        Log.d(PlaintMachineTransform.TAG,"visitMethod name:$name traceMethod:$list,black:$blackList")
         var newList: List<PlaitMethodList>? = list
         if (!list.isNullOrEmpty() && !blackList.isNullOrEmpty()) {
-            newList = list!!.filter {
+            newList = list!!.filter {//todo 优化算法
                 blackList!!.find { it1 -> it.plaitClass == it1.plaitClass && it.plaitMethod == it1.plaitMethod } == null
             }
         }
         Log.d(TAG,"visitMethod name:$className.$name filterList:$newList")
         Log.d(TAG,"visitMethod name:$className.$name anonList:$anonList")
+        Log.d(TAG,"visitMethod name:$className.$name blackAnonList:$blackAnonList")
         if (name == "<clinit>" || "<init>" == name || "toString" == name
             || (newList.isNullOrEmpty() && anonList.isNullOrEmpty())) {
                 Log.d(TAG, "visitMethod name:$className.$name list is empty")
             return result
         }
-        return PlaitMethodVisitor(className!!, result, access, name, descriptor, newList, anonList)
+        return PlaitMethodVisitor(className!!, result, access, name, descriptor, newList, anonList, blackAnonList)
     }
 
     override fun visitAnnotation(descriptor: String?, visible: Boolean): AnnotationVisitor {

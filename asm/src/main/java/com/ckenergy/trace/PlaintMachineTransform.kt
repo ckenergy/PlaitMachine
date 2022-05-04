@@ -57,7 +57,8 @@ class PlaintMachineTransform : Transform() {
                     val black = if (false) {
                         map = traceMap
                         plaitClassExtension.blackClassList?.find { it1 -> //com.hh.cc  ,black: com.hh.*
-                            (it1.name == it.name || it.name.contains(it1.name.replace("*", ""))) && it1.methodList.find { it2 -> it2 == "all*" } == null
+                            (it1.name == it.name || it.name.contains(it1.name.replace("*", "")))
+                                    && it1.methodList.find { it2 -> it2 == "all*" } == null
                         }
                     } else {
                         map = packages

@@ -60,12 +60,22 @@ plaitMachine {
 //                }
 //            }
 //        }
+//        "com/ckenergy/trace/TraceTag.test1" {
+//            classList {
+//                "com/ckenergy/trace/*" { //测试注解
+//                    methodList = ["@com/ckenergy/trace/TestTrace"]
+//                }
+//            }
+//        }
         "com/ckenergy/trace/TraceTag.test1" {
-            // 要织入的类名和方法名,注意只能是静态没有参数和返回值的方法
-            classList { // 需要织入的列表
-                "com/ckenergy/trace/*" { //要织入位置的类名
-                    // 要织入位置 类中的方法 默认去除了<cinit>静态初始化和<init>, toString构造函数 如果需要只需要加入就行了
-                    methodList = ["@com/ckenergy/trace/TestTrace"]
+            classList {
+                "com/ckenergy/trace/*" { //测试注解
+                    methodList = ["all*"]
+                }
+            }
+            blackClassList { // 需要过滤的列表
+                "com/ckenergy/trace/*" {
+                    methodList = ["@com/ckenergy/trace/NoTrace"]
                 }
             }
         }

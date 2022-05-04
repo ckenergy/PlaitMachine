@@ -51,6 +51,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         TestIgnore.INSTANCE.doSomeInIgnore();
     }
 
+    @NoTrace
     private void doSome1() {
         Log.e("main", "doSome1");
         try {

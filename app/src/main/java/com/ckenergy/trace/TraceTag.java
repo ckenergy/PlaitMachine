@@ -2,7 +2,7 @@ package com.ckenergy.trace;
 
 import android.util.Log;
 
-import com.ckenergy.tracelog.TraceInfo;
+import com.ckenergy.plaintmachine.TraceInfo;
 
 
 public class TraceTag {

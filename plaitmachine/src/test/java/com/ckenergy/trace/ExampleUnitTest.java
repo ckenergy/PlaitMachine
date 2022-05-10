@@ -1,4 +1,4 @@
-package com.hellotalk.trace;
+package com.ckenergy.trace;
 
 import org.junit.Test;
 

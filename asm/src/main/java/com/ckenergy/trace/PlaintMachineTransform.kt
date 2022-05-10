@@ -7,6 +7,7 @@ import com.ckenergy.trace.extension.PlaitExtension
 import com.ckenergy.trace.extension.PlaitMethodList
 import com.ckenergy.trace.extension.TraceConfig
 import com.ckenergy.trace.extension.TraceMethodListExtension
+import org.apache.commons.codec.digest.DigestUtils
 import org.gradle.api.NamedDomainObjectContainer
 import org.objectweb.asm.ClassReader
 import org.objectweb.asm.ClassWriter
@@ -29,7 +30,7 @@ import java.util.zip.ZipOutputStream
 class PlaintMachineTransform : Transform() {
 
     companion object {
-        const val TAG = "===TraceLogTransform==="
+        const val TAG = "===PlaintMachineTransform==="
 
         fun newTransform(): PlaintMachineTransform {
             return PlaintMachineTransform()
@@ -117,14 +118,14 @@ class PlaintMachineTransform : Transform() {
 
     }
 
-    var traceLogExtension: PlaitExtension? = null
+    var plaintMachineExtension: PlaitExtension? = null
 
     var traceConfig: TraceConfig? = null
 
     //创建大小为16的线程池
     private val executor = Executors.newFixedThreadPool(16)
 
-    override fun getName() = "TraceLogTransform"
+    override fun getName() = "PlaintMachineTransform"
 
     override fun getInputTypes(): MutableSet<QualifiedContent.ContentType> {
         return TransformManager.CONTENT_CLASS
@@ -138,7 +139,7 @@ class PlaintMachineTransform : Transform() {
     override fun isIncremental() = true
 
     override fun transform(transformInvocation: TransformInvocation?) {
-        val extension = traceLogExtension
+        val extension = plaintMachineExtension
         val startTime = System.currentTimeMillis()
 
         val enable = extension?.enable == true
@@ -152,11 +153,14 @@ class PlaintMachineTransform : Transform() {
         val isIncremental = transformInvocation!!.isIncremental && this.isIncremental
         val outputProvider = transformInvocation.outputProvider
         val inputs = transformInvocation.inputs
+        if(!isIncremental) {
+            outputProvider?.deleteAll()
+        }
 
         val tasks = ArrayList<Future<*>>()
 
         for (input in inputs) {
-            Log.d(TAG, "dir: ${input.directoryInputs.size}, isIncremental:$isIncremental")
+//            Log.d(TAG, "dir: ${input.directoryInputs.size}, isIncremental:$isIncremental")
             for (directoryInput in input.directoryInputs) {
                 val srcDir = directoryInput.file.absolutePath
 //                Log.d(TAG,"directoryInput: ${srcDir}")
@@ -176,9 +180,8 @@ class PlaintMachineTransform : Transform() {
 //                        Log.d(TAG,"changedFiles:${file.absolutePath},status:$status")
 
                         if (status == Status.ADDED || status == Status.CHANGED) {
-                            val action = if (enable) plait(file, srcDir, dest) else null
-                            if (action != null) {
-                                executor.submit(action).apply { tasks.add(this) }
+                            if (enable) {
+                                executor.submit(plait(file, srcDir, dest)).apply { tasks.add(this) }
                             } else {
                                 FileUtils.copyFileToDirectory(file, dest)
                             }
@@ -197,14 +200,13 @@ class PlaintMachineTransform : Transform() {
                     }
                 } else {
                     if (enable) {
-                        if (directoryInput.file.isDirectory) {
-                            FileUtils.getAllFiles(directoryInput.file).forEach { file ->
-                                val action = plait(file, srcDir, dest)
-                                if (action != null) {
-                                    executor.submit(action).apply { tasks.add(this) }
-                                } else {
-                                    FileUtils.copyFileToDirectory(file, dest)
+                        directoryInput.file.let {
+                            if (it.isDirectory) {
+                                FileUtils.getAllFiles(it).forEach { file ->
+                                    executor.submit(plait(file, srcDir, dest)).apply { tasks.add(this) }
                                 }
+                            }else {
+                                executor.submit(plait(it, srcDir, dest)).apply { tasks.add(this) }
                             }
                         }
                     } else {
@@ -214,9 +216,15 @@ class PlaintMachineTransform : Transform() {
             }
 //            Log.d(TAG,"changedJars size:${input.jarInputs.size}")
             for (inputJar in input.jarInputs) {
+                var destName = inputJar.name
+                // rename jar files
+                val hexName = DigestUtils.md5Hex(inputJar.file.absolutePath)
+                if (destName.endsWith(".jar")) {
+                    destName = destName.substring(0, destName.length - 4)
+                }
                 //将jar也加进来,androidx需要这个
                 val dest = outputProvider.getContentLocation(
-                    inputJar.name,
+                    destName+"_"+hexName,
                     inputJar.contentTypes,
                     inputJar.scopes,
                     Format.JAR
@@ -258,7 +266,7 @@ class PlaintMachineTransform : Transform() {
         println("$TAG >>> timeCount：${System.currentTimeMillis() - startTime}")
     }
 
-    private fun plait(file: File, input: String, dest: File): Runnable? {
+    private fun plait(file: File, input: String, dest: File): Runnable {
         val destName = file.absolutePath.replace(input, dest.absolutePath)
 //        Log.d(TAG,">>>>>>>>> PlaitAction filter classPath :${file.absolutePath}")
         return PlaitAction(file, destName, traceConfig)
@@ -273,13 +281,16 @@ class PlaintMachineTransform : Transform() {
 
         override fun run() {
             val destFile = File(dest)
+            if (destFile.exists()) {
+                destFile.delete()
+            }
             val destDir = destFile.parentFile
             org.apache.commons.io.FileUtils.forceMkdir(destDir)
             val classPath = dest
 
             val name = file.name
 //            Log.d(TAG, ">>>>>>>>> classPath :$classPath, fileName:$name")
-            if (name.endsWith(".class")) {
+            if (name.endsWith(".class", true)) {
                 val fos = FileOutputStream(classPath)
                 try {
                     val cr = ClassReader(file.readBytes())
@@ -330,23 +341,35 @@ class PlaintMachineTransform : Transform() {
                     val zipEntryName = zipEntry.name
                     val inputStream = zipFile.getInputStream(zipEntry)
 //                    println(">>>>>>>>> innerTraceMethodFromJar classPath :$zipEntryName")
-                    val cr = ClassReader(inputStream)
-                    val cw = ClassWriter(cr, ClassWriter.COMPUTE_MAXS)
-                    //需要处理的类使用自定义的visitor来处理
-                    val visitor = PlaitClassVisitor(cw, map)
-                    cr.accept(visitor, ClassReader.EXPAND_FRAMES)
+                    var hasTrace = false
+                    try {
+                        if (zipEntryName.endsWith(".DSA") || zipEntryName.endsWith(".SF")) {
+                            //ignore
+                        }else {
+                            val cr = ClassReader(inputStream)
+                            val cw = ClassWriter(cr, ClassWriter.COMPUTE_MAXS)
+                            //需要处理的类使用自定义的visitor来处理
+                            val visitor = PlaitClassVisitor(cw, map)
+                            cr.accept(visitor, ClassReader.EXPAND_FRAMES)
 
-                    val bytes = cw.toByteArray()
-                    val byteArrayInputStream: InputStream = ByteArrayInputStream(bytes)
-                    val newZipEntry = ZipEntry(zipEntryName)
-                    FileUtil.addZipEntry(zipOutputStream, newZipEntry, byteArrayInputStream)
-//                    if (map?.isNeedTraceClass(zipEntryName) != false) {
-//
-//                    }else {
-//                        FileUtil.addZipEntry(zipOutputStream, zipEntry, inputStream)
-//                    }
+                            val bytes = cw.toByteArray()
+                            val byteArrayInputStream: InputStream = ByteArrayInputStream(bytes)
+                            val newZipEntry = ZipEntry(zipEntryName)
+                            FileUtil.addZipEntry(zipOutputStream, newZipEntry, byteArrayInputStream)
+                            hasTrace = true
+                        }
+                    }catch (e: Exception) {
+                        e.printStackTrace()
+                        Log.d(TAG, "trace jar entry error:${e.message}")
+                    }
+                    if (!hasTrace) {
+                        val newZipEntry = ZipEntry(zipEntryName)
+                        val byteArrayInputStream: InputStream = ByteArrayInputStream(inputStream.readBytes())
+                        FileUtil.addZipEntry(zipOutputStream, newZipEntry, byteArrayInputStream)
+                    }
                 }
             } catch (e: java.lang.Exception) {
+                Log.d(TAG, "trace jar error:${e.message}")
                 try {
                     Files.copy(input.toPath(), output.toPath(), StandardCopyOption.REPLACE_EXISTING)
                 } catch (e1: java.lang.Exception) {

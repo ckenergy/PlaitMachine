@@ -1,4 +1,4 @@
-package com.hellotalk.trace;
+package com.ckenergy.trace;
 
 import android.content.Context;
 
@@ -21,6 +21,6 @@ public class ExampleInstrumentedTest {
     public void useAppContext() {
         // Context of the app under test.
         Context appContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
-        assertEquals("com.hellotalk.tracelog", appContext.getPackageName());
+        assertEquals("com.ckenergy.PlaintMachine", appContext.getPackageName());
     }
 }

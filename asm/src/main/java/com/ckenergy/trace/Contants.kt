@@ -8,7 +8,7 @@ import org.objectweb.asm.Opcodes
 object Contants {
 
     const val ALL = "all*"
-    const val TRACE_INFO_CLASS = "com/ckenergy/tracelog/TraceInfo"
+    const val TRACE_INFO_CLASS = "com/ckenergy/plaintmachine/TraceInfo"
     val UN_TRACE_CLASS = arrayOf("R.class", "R$", "Manifest", "BuildConfig")
 
     const val ASM_VERSION = Opcodes.ASM7

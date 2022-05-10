@@ -14,23 +14,22 @@ class PlaitMachinePlugin : Plugin<Project> {
 
     override fun apply(project: Project) {
 
-        if (project.plugins.hasPlugin(AppPlugin::class.java)) {
-            project.extensions.create("plaitMachine", PlaitExtension::class.java, project)
-            val transform = PlaintMachineTransform.newTransform()
-            val appExtension = project.extensions.findByType(AppExtension::class.java)
-            appExtension?.registerTransform(transform)
+        project.extensions.create("plaitMachine", PlaitExtension::class.java, project)
+        val transform = PlaintMachineTransform.newTransform()
+        val appExtension = project.extensions.findByType(AppExtension::class.java)
+        appExtension?.registerTransform(transform)
 
-            project.afterEvaluate {
-                val configuration: PlaitExtension? =
-                    it.extensions.getByName("plaitMachine") as? PlaitExtension
-//                    it.extensions.getByName("plaitMachine") as? TraceLogExtension
-                Log.printLog = configuration?.logInfo ?: false
-                Log.d(PlaintMachineTransform.TAG, "afterEvaluate configuration:${configuration?.enable}, method:${configuration?.plaitClass?.asMap}")
-                //注入PlaitMachineTransform
-                transform.traceLogExtension = configuration
+        project.afterEvaluate {
+            val configuration: PlaitExtension? =
+                it.extensions.getByName("plaitMachine") as? PlaitExtension
+            Log.printLog = configuration?.logInfo ?: false
+            Log.d(PlaintMachineTransform.TAG, "afterEvaluate configuration:${configuration?.enable}, method:${configuration?.plaitClass?.asMap}")
+            //注入PlaitMachineTransform
+            transform.plaintMachineExtension = configuration
 
-            }
         }
+//        if (project.plugins.hasPlugin(AppPlugin::class.java)) {
+//        }
     }
 
 }

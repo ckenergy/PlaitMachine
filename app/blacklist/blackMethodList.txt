@@ -1,13 +1,13 @@
 [package]
 #只对某些类操作 可以不用
-#-traceclass com/hellotalk/trace
+#-traceclass com/ckenergy/trace
 
 #只对某些包操作
--trace com/hellotalk/trace
+-trace com/ckenergy/trace
 
 # 可以将某个class加入白名单中 可以不用
-#-keepclass com/hellotalk/trace/ignore/TestIgnore
+#-keepclass com/ckenergy/trace/ignore/TestIgnore
 
 # 可以将某个package加入白名单中
 -keep androidx/
--keep com/hellotalk/trace/ignore/TestIgnore
+-keep com/ckenergy/trace/ignore/TestIgnore

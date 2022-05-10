@@ -46,7 +46,7 @@ class PlaitClassVisitor(
         val list = getMethodList(className, traceConfig)
         val blackList = getBlackMethodList(className, traceConfig)
 
-        if (className?.contains("trace") == true) {
+        if (className?.contains("ckenergy") == true) {
             Log.d(TAG, "==== visit main:$name list:$list, blackList:$blackList")
         }
 
@@ -99,7 +99,7 @@ class PlaitClassVisitor(
             }
             blackMethodMap = blackMap
         }
-        if (className?.contains("trace") == true) {
+        if (className?.contains("ckenergy") == true) {
             Log.d(TAG, "==== visit name:$name, map:$map, black:$blackMap")
         }
         isNeedTrace = !name.isNullOrEmpty() && !map.isNullOrEmpty()

@@ -23,7 +23,7 @@ class PlaitMethodVisitor @JvmOverloads constructor(
     //方法开始,此处可在方法开始插入字节码
     override fun onMethodEnter() {
         super.onMethodEnter()
-        var traceName = "$className.$name"
+        val traceName = "$className.$name"
         Log.d(TAG, "onMethodEnter name:$traceName")
 
         val types = Type.getArgumentTypes(descriptor)
@@ -47,7 +47,7 @@ class PlaitMethodVisitor @JvmOverloads constructor(
         val traceInfoIndex = mapIndex + 1
         //构建traceinfo对象
         visiteTraceInfo(isStatic, traceName, objsIndex, mapIndex, traceInfoIndex)
-        var temMethodList = arrayListOf<PlaitMethodList>()
+        val temMethodList = arrayListOf<PlaitMethodList>()
         if (!annoMap.isNullOrEmpty()) {
             annotations.forEach {
                 annoMap[it.key]?.apply {
@@ -58,7 +58,7 @@ class PlaitMethodVisitor @JvmOverloads constructor(
 
         if (!methodList.isNullOrEmpty())
             temMethodList.addAll(methodList)
-        Log.d(TAG, "temMethodList:$temMethodList,name:$className.$name")
+        Log.d(TAG, "name:$className.$name, temMethodList:$temMethodList")
 
         val blackMethodList = arrayListOf<PlaitMethodList>()
         if (!blackAnnoMap.isNullOrEmpty()) {
@@ -68,17 +68,23 @@ class PlaitMethodVisitor @JvmOverloads constructor(
                 }
             }
         }
-        Log.d(TAG, "blackMethodList:$blackMethodList,name:$className.$name")
+        Log.d(TAG, "name:$className.$name, blackMethodList:$blackMethodList")
 
         //todo 优化算法
-        val newMethodList = temMethodList.filter { it1->
-            blackMethodList.find { it.plaitClass == it1.plaitClass && it.plaitMethod == it1.plaitMethod } == null
-        }
-        Log.d(TAG, "newMethodList:$newMethodList,name:$className.$name")
+        val newMethodList = if (temMethodList.isNotEmpty() && blackMethodList.isNotEmpty()) {
+             temMethodList.filter { it1->//去除配置注解黑名单里的方法
+                blackMethodList.find { it.plaitClass == it1.plaitClass && it.plaitMethod == it1.plaitMethod } == null
+            }
+        }else temMethodList
+        Log.d(TAG, "name:$className.$name, newMethodList1:$newMethodList")
 
         //注入方法
-        if (newMethodList.isNullOrEmpty()) return
+        if (newMethodList.isNullOrEmpty()) {
+            Log.d(TAG, "name:$className.$name, method is empty")
+            return
+        }
         newMethodList.forEach {
+            Log.d(TAG, "name:$className.$name, invoke method: ${it.plaitClass}.${it.plaitMethod}")
             mv.visitVarInsn(ALOAD, traceInfoIndex)
             mv.visitMethodInsn(
                 INVOKESTATIC,

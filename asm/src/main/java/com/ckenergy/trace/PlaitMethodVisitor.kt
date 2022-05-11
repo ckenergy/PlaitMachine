@@ -18,7 +18,9 @@ class PlaitMethodVisitor @JvmOverloads constructor(
     val blackAnnoMap: Map<String, List<PlaitMethodList>?>? = null,
 ) : AdviceAdapter(Contants.ASM_VERSION, methodVisitor, access, name, descriptor) {
 
-    val annotations = HashMap<String, Map<String, Any?>?>()
+    private val annotations by lazy{
+        HashMap<String, Map<String, Any?>?>()
+    }
 
     //方法开始,此处可在方法开始插入字节码
     override fun onMethodEnter() {
@@ -60,39 +62,43 @@ class PlaitMethodVisitor @JvmOverloads constructor(
         }else temMethodList
         Log.d(TAG, "name:$className.$name, newMethodList1:$newMethodList")
 
-
         if (newMethodList.isNullOrEmpty()) {
             Log.d(TAG, "name:$className.$name, method is empty")
             return
         }
 
         //获取参数,然后构建参数数值
-        val types = Type.getArgumentTypes(descriptor)
-        val size = types.size
-        mv.visitLdcInsn(size)
-        mv.visitTypeInsn(ANEWARRAY, "java/lang/Object")
         val isStatic = AsmUtil.isStatic(access)
-        val objsIndex = if (isStatic) size else size + 1
-        mv.visitVarInsn(ASTORE, objsIndex)
-        types.forEachIndexed { index, type ->
-            mv.visitVarInsn(ALOAD, objsIndex)
-            mv.visitLdcInsn(index)
-            val opcode = getOpcode(type)
-            mv.visitVarInsn(opcode, if (isStatic) index else index + 1)
-            visitMethod(type, opcode)
-            mv.visitInsn(AASTORE)
+        val argsIndex: Int
+        if (descriptor.isNullOrBlank()) {
+            val size = 0
+            argsIndex = if (isStatic) size else size + 1
+            newArgsArray(size, argsIndex)
+        }else {
+            val types = Type.getArgumentTypes(descriptor)
+            val size = types.size
+            argsIndex = if (isStatic) size else size + 1
+            newArgsArray(size, argsIndex)
+            types.forEachIndexed { index, type ->
+                mv.visitVarInsn(ALOAD, argsIndex)
+                mv.visitLdcInsn(index)
+                val opcode = getOpcode(type)
+                mv.visitVarInsn(opcode, if (isStatic) index else index + 1)
+                visitMethod(type, opcode)
+                mv.visitInsn(AASTORE)
+            }
         }
 
-        val mapIndex = objsIndex + 1
+        val mapIndex = argsIndex + 1
         visitMap(mapIndex)
-        val traceInfoIndex = mapIndex + 1
-        //构建info对象
-        visiteTraceInfo(isStatic, traceName, objsIndex, mapIndex, traceInfoIndex)
+        val contextIndex = mapIndex + 1
+        //构建context对象
+        visitePlaitContext(isStatic, traceName, argsIndex, mapIndex, contextIndex)
 
         //注入方法
         newMethodList.forEach {
             Log.d(TAG, "name:$className.$name, invoke method: ${it.plaitClass}.${it.plaitMethod}")
-            mv.visitVarInsn(ALOAD, traceInfoIndex)
+            mv.visitVarInsn(ALOAD, contextIndex)
             mv.visitMethodInsn(
                 INVOKESTATIC,
                 it.plaitClass,
@@ -100,6 +106,12 @@ class PlaitMethodVisitor @JvmOverloads constructor(
                 false
             )
         }
+    }
+
+    private fun newArgsArray(size: Int, index: Int) {
+        mv.visitLdcInsn(size)
+        mv.visitTypeInsn(ANEWARRAY, "java/lang/Object")
+        mv.visitVarInsn(ASTORE, index)
     }
 
     // -------------
@@ -177,7 +189,7 @@ class PlaitMethodVisitor @JvmOverloads constructor(
     }
 
     private fun visitMap(index: Int): Int {
-//        Log.d(TAG, "annotations:$annotations")
+        Log.d(TAG, "annotations:$annotations")
         mv.visitTypeInsn(NEW, "java/util/HashMap")
         mv.visitInsn(DUP)
         mv.visitMethodInsn(INVOKESPECIAL, "java/util/HashMap", "<init>", "()V", false)
@@ -238,7 +250,7 @@ class PlaitMethodVisitor @JvmOverloads constructor(
         return index
     }
 
-    private fun visiteTraceInfo(
+    private fun visitePlaitContext(
         isStatic: Boolean,
         traceName: String,
         objsIndex: Int,

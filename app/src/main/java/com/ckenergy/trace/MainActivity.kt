@@ -6,7 +6,7 @@ import android.util.Log
 import android.view.View
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
-import com.ckenergy.plaintmachine.TestIgnore.doSomeInIgnore
+import com.ckenergy.lib.TestIgnore.doSomeInIgnore
 
 class MainActivity : AppCompatActivity(), View.OnClickListener {
     override fun onCreate(savedInstanceState: Bundle?) {

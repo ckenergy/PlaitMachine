@@ -7,7 +7,7 @@ import java.util.HashMap;
  * Created by chengkai on 2021/7/28.
  */
 
-public class TraceInfo {
+public class PlaitContext {
 
     private String methodName;
 
@@ -17,7 +17,7 @@ public class TraceInfo {
 
     private HashMap<String, HashMap<String, Object>> annotations;
 
-    public TraceInfo(String methodName, Object current, Object[] args, HashMap<String, HashMap<String, Object>> annotations) {
+    public PlaitContext(String methodName, Object current, Object[] args, HashMap<String, HashMap<String, Object>> annotations) {
         this.methodName = methodName;
         this.current = current;
         this.args = args;

@@ -2,19 +2,19 @@ package com.ckenergy.trace;
 
 import android.util.Log;
 
-import com.ckenergy.plaintmachine.TraceInfo;
+import com.ckenergy.plaintmachine.PlaitContext;
 
 
 public class TraceTag {
 
     private static final String TAG = "TraceTag";
 
-    public static void test1(TraceInfo traceInfo) {
-        Log.e(TAG, "Test1:"+ traceInfo);
+    public static void test1(PlaitContext plaitContext) {
+        Log.e(TAG, "Test1:"+ plaitContext);
     }
 
 
-    public static void test(TraceInfo traceInfo) {
-        Log.e(TAG, "Test:"+ traceInfo);
+    public static void test(PlaitContext plaitContext) {
+        Log.e(TAG, "Test:"+ plaitContext);
     }
 }

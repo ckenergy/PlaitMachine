@@ -133,12 +133,14 @@ class PlaitClassVisitor(
             }
         }
         val anonList = hashMapOf<String, List<PlaitMethodList>?>()
+        //在获取类注解内的方法
         methodListMap?.forEach {
             if (it.key.contains("@")) {
                 anonList[it.key.replace("@","L")] = it.value
             }
         }
         var blackList = blackMethodMap?.get(name)
+//        过滤黑名单的方法
         blackMethodMap?.get(Contants.ALL)?.apply {
             if (blackList != null) {
                 blackList!!.addAll(this)
@@ -147,6 +149,7 @@ class PlaitClassVisitor(
             }
         }
         val blackAnonList = hashMapOf<String, List<PlaitMethodList>?>()
+//        过滤黑名单注解的方法
         blackMethodMap?.forEach {
             if (it.key.contains("@")) {
                 blackAnonList[it.key.replace("@","L")] = it.value
@@ -172,7 +175,7 @@ class PlaitClassVisitor(
 
     override fun visitAnnotation(descriptor: String?, visible: Boolean): AnnotationVisitor {
 //        Log.d(TAG, "visitAnnotation descriptor:$descriptor, visible:$visible")
-        if(!descriptor.isNullOrBlank())
+        if(!descriptor.isNullOrBlank() && !isABSClass)
             classAnoList.add(descriptor)
         return super.visitAnnotation(descriptor, visible)
     }

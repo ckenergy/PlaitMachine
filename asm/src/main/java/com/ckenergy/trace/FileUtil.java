@@ -341,7 +341,7 @@ public class FileUtil {
                 zipOutputStream.flush();
             }
         } catch (ZipException e) {
-//            Log.e(TAG, "addZipEntry err!");
+            Log.d(TAG, "addZipEntry err!");
         } finally {
             closeQuietly(inputStream);
 

@@ -11,7 +11,8 @@ import com.ckenergy.plaintmachine.TestIgnore.doSomeInIgnore
 class MainActivity : AppCompatActivity(), View.OnClickListener {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        Log.e("main", "onCreate")
+        val a = "com/s"
+        Log.e("main", "onCreate ${a.startsWith("")}")
         setContentView(R.layout.activity_main)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val ars: MutableList<String> = ArrayList()

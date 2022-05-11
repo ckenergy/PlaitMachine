@@ -229,6 +229,7 @@ class PlaintMachineTransform : Transform() {
                     inputJar.scopes,
                     Format.JAR
                 )
+//                Log.d(TAG, "jar hexName:$hexName, dest:$dest, destName:$destName")
                 if (isIncremental) {//增量更新，只 操作有改动的文件
 //                    Log.d(TAG,"isIncremental inputJar:${inputJar.name},status:${inputJar.status}")
                     val status = inputJar.status
@@ -303,7 +304,7 @@ class PlaintMachineTransform : Transform() {
                     fos.write(bytes)
                 } catch (e: Exception) {
                     e.printStackTrace()
-                    Log.d(TAG, ">>>>>>>>> PlaitAction error :${e.printStackTrace()}")
+                    Log.d(TAG, ">>>>>>>>> PlaitAction:$name error :${e.printStackTrace()}")
                     FileUtils.copyFileToDirectory(file, destDir)
                 } finally {
                     fos.flush()
@@ -340,10 +341,10 @@ class PlaintMachineTransform : Transform() {
                     val zipEntry = enumeration.nextElement()
                     val zipEntryName = zipEntry.name
                     val inputStream = zipFile.getInputStream(zipEntry)
-//                    println(">>>>>>>>> innerTraceMethodFromJar classPath :$zipEntryName")
+                    Log.d(TAG,">>>>>>>>> innerTraceMethodFromJar input:$input, output:$output, classPath :$zipEntryName")
                     var hasTrace = false
                     try {
-                        if (zipEntryName.endsWith(".DSA") || zipEntryName.endsWith(".SF")) {
+                        if (zipEntryName.endsWith(".DSA") || zipEntryName.endsWith(".SF") || zipEntry.isDirectory) {
                             //ignore
                         }else {
                             val cr = ClassReader(inputStream)
@@ -360,7 +361,7 @@ class PlaintMachineTransform : Transform() {
                         }
                     }catch (e: Exception) {
                         e.printStackTrace()
-                        Log.d(TAG, "trace jar entry error:${e.message}")
+                        Log.d(TAG, "trace jar entry:$zipEntryName error:${e.message}")
                     }
                     if (!hasTrace) {
                         val newZipEntry = ZipEntry(zipEntryName)
@@ -369,7 +370,7 @@ class PlaintMachineTransform : Transform() {
                     }
                 }
             } catch (e: java.lang.Exception) {
-                Log.d(TAG, "trace jar error:${e.message}")
+                Log.d(TAG, "trace jar:${input.absolutePath} error:${e.message}")
                 try {
                     Files.copy(input.toPath(), output.toPath(), StandardCopyOption.REPLACE_EXISTING)
                 } catch (e1: java.lang.Exception) {

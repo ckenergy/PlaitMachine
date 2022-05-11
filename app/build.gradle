@@ -60,28 +60,28 @@ plaitMachine {
 //                }
 //            }
 //        }
-//        "com/ckenergy/trace/TraceTag.test1" {
-//            classList {
-//                "com/ckenergy/trace/*" { //测试注解
-//                    methodList = ["@com/ckenergy/trace/TestTrace"]
-//                }
-//            }
-//        }
         "com/ckenergy/trace/TraceTag.test1" {
             classList {
-//                "com/ckenergy/trace/MainActivity" {
-//                    methodList = ["all*"]
-//                }
-                "com/ckenergy/plaintmachine/TestIgnore" {
-                    methodList = ["doSomeInIgnore"]
-                }
-            }
-            blackClassList { // 需要过滤的列表
-                "com/ckenergy/trace/*" {
-                    methodList = ["@com/ckenergy/trace/NoTrace"]
+                "com/*" { //测试注解
+                    methodList = ["@com/ckenergy/trace/TestTrace"]
                 }
             }
         }
+//        "com/ckenergy/trace/TraceTag.test1" {
+//            classList {
+////                "com/ckenergy/trace/MainActivity" {
+////                    methodList = ["all*"]
+////                }
+//                "com/ckenergy/plaintmachine/TestIgnore" {
+//                    methodList = ["doSomeInIgnore"]
+//                }
+//            }
+//            blackClassList { // 需要过滤的列表
+//                "com/ckenergy/trace/*" {
+//                    methodList = ["@com/ckenergy/trace/NoTrace"]
+//                }
+//            }
+//        }
     }
 }
 repositories {

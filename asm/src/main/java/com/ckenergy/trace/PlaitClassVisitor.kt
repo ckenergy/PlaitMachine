@@ -43,12 +43,14 @@ class PlaitClassVisitor(
             this.isABSClass = true
         }
 
+        if(isABSClass) return
+
         val list = getMethodList(className, traceConfig)
         val blackList = getBlackMethodList(className, traceConfig)
 
-        if (className?.contains("ckenergy") == true) {
-            Log.d(TAG, "==== visit main:$name list:$list, blackList:$blackList")
-        }
+//        if (className?.contains("ckenergy") == true) {
+//            Log.d(TAG, "==== visit main:$name list:$list, blackList:$blackList")
+//        }
 
         val map = HashMap<String, MutableList<PlaitMethodList>?>()
         val blackMap = HashMap<String, MutableList<PlaitMethodList>?>()
@@ -99,18 +101,14 @@ class PlaitClassVisitor(
             }
             blackMethodMap = blackMap
         }
-        if (className?.contains("ckenergy") == true) {
-            Log.d(TAG, "==== visit name:$name, map:$map, black:$blackMap")
-        }
+//        if (className?.contains("ckenergy") == true) {
+//            Log.d(TAG, "==== visit name:$name, map:$map, black:$blackMap")
+//        }
         isNeedTrace = !name.isNullOrEmpty() && !map.isNullOrEmpty()
 
-        if(isNeedTrace && !isABSClass) {
-            Log.d(TAG, "visit NeedTrace name:$name")
-        }
-    }
-
-    override fun visitOuterClass(owner: String?, name: String?, descriptor: String?) {
-        super.visitOuterClass(owner, name, descriptor)
+//        if(isNeedTrace && !isABSClass) {
+//            Log.d(TAG, "visit NeedTrace name:$name")
+//        }
     }
 
     //类中方法的入口
@@ -161,12 +159,12 @@ class PlaitClassVisitor(
                 blackList!!.find { it1 -> it.plaitClass == it1.plaitClass && it.plaitMethod == it1.plaitMethod } == null
             }
         }
-        Log.d(TAG,"visitMethod name:$className.$name filterList:$newList")
-        Log.d(TAG,"visitMethod name:$className.$name anonList:$anonList")
-        Log.d(TAG,"visitMethod name:$className.$name blackAnonList:$blackAnonList")
+//        Log.d(TAG,"visitMethod name:$className.$name filterList:$newList")
+//        Log.d(TAG,"visitMethod name:$className.$name anonList:$anonList")
+//        Log.d(TAG,"visitMethod name:$className.$name blackAnonList:$blackAnonList")
         if (name == "<clinit>" || "<init>" == name || "toString" == name
             || (newList.isNullOrEmpty() && anonList.isNullOrEmpty())) {
-                Log.d(TAG, "visitMethod name:$className.$name list is empty")
+//                Log.d(TAG, "visitMethod name:$className.$name list is empty")
             return result
         }
         return PlaitMethodVisitor(className!!, result, access, name, descriptor, newList, anonList, blackAnonList)
@@ -186,7 +184,7 @@ class PlaitClassVisitor(
 
         traceConfig.packages?.forEach {
             if (it.value != null) {
-                if (className.contains(it.key.replace("*", ""))) {
+                if (className.startsWith(it.key.replace("*", ""))) {
                     methodlist.addAll(it.value!!)
                 }
                 if (classAnoList.contains(it.key.replace("@", "L"))) {
@@ -205,7 +203,7 @@ class PlaitClassVisitor(
         val methodlist = arrayListOf<PlaitMethodList>()
         traceConfig.blackPackages?.forEach {
             if (it.value != null) {
-                if (className.contains(it.key.replace("*", ""))) {
+                if (className.startsWith(it.key.replace("*", ""))) {
                     methodlist.addAll(it.value!!)
                 }
                 if (classAnoList.contains(it.key.replace("@", "L"))) {

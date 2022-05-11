@@ -63,8 +63,8 @@ plaitMachine {
 //        }
         "com/ckenergy/trace/TraceTag.test1" {
             classList {
-                "com/*" { //测试注解
-                    methodList = ["@com/ckenergy/trace/TestTrace"]
+                "com/ckenergy/*" { //测试注解
+                    methodList = ["all*"]
                 }
             }
         }

@@ -51,6 +51,7 @@ class PlaintMachineTransform : Transform() {
             1,2,3为需要hook方法的名字，a，b，c为要织入的方法
              */
             plaitExtension.plaitClass.forEach { plaitClassExtension ->
+                val result = plaitClassExtension.name.split(".")//切分类名和方法名字
                 plaitClassExtension.classList?.forEach {
 //                    println("===$TAG >>>>> className:$classNameNew Trace:${it.name},")
                     val map: HashMap<String, ArrayList<PlaitMethodList>?>
@@ -70,7 +71,6 @@ class PlaintMachineTransform : Transform() {
                         list = ArrayList()
                     }
                     map.put(it.name, list)
-                    val result = plaitClassExtension.name.split(".")//切分类名和方法名字
                     if (result.size == 2) {
                         val plaitMethodList = PlaitMethodList()
                         plaitMethodList.plaitClass = result[0]
@@ -84,24 +84,23 @@ class PlaintMachineTransform : Transform() {
 //                    println("===$TAG >>>>> className:$classNameNew Trace:${it.name},")
                     val list1 = blackPackages[it.name] ?: ArrayList()
                     blackPackages.put(it.name, list1)
-                    val result = plaitClassExtension.name.split(".")//切分类名和方法名字
                     if (result.size == 2) {
                         val plaitMethodList = PlaitMethodList()
                         plaitMethodList.plaitClass = result[0]
                         plaitMethodList.plaitMethod = result[1]
                         plaitMethodList.methodList = it.methodList
                         list1.add(plaitMethodList)
-
-                        //要插入的方法也加入到黑名单，避免造成循环调用
-                        val list2 = blackPackages[plaitMethodList.plaitClass] ?: ArrayList()
-                        blackPackages.put(plaitMethodList.plaitClass, list2)
-                        list2.add(PlaitMethodList().apply {
-                            plaitClass = plaitMethodList.plaitClass
-                            plaitMethod = plaitMethodList.plaitMethod
-                            methodList = listOf(plaitMethodList.plaitMethod)
-                        })
                     }
                 }
+
+                //要插入的方法也加入到黑名单，避免造成循环调用
+                val list2 = blackPackages[result[0]] ?: ArrayList()
+                blackPackages.put(result[0], list2)
+                list2.add(PlaitMethodList().apply {
+                    plaitClass = result[0]
+                    plaitMethod = result[1]
+                    methodList = listOf(result[1])
+                })
             }
             return TraceConfig(traceMap, packages, blackPackages)
         }
@@ -229,7 +228,7 @@ class PlaintMachineTransform : Transform() {
                     inputJar.scopes,
                     Format.JAR
                 )
-//                Log.d(TAG, "jar hexName:$hexName, dest:$dest, destName:$destName")
+                Log.d(TAG, "jar hexName:$hexName, dest:$dest, destName:$destName")
                 if (isIncremental) {//增量更新，只 操作有改动的文件
 //                    Log.d(TAG,"isIncremental inputJar:${inputJar.name},status:${inputJar.status}")
                     val status = inputJar.status

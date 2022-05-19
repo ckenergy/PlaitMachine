@@ -11,7 +11,7 @@ import kotlin.collections.HashMap
 private const val TAG = "===PlaitClassVisitor==="
 class PlaitClassVisitor(
     classVisitor: ClassVisitor, val traceConfig: TraceConfig?
-) : ClassVisitor(Contants.ASM_VERSION, classVisitor) {
+) : ClassVisitor(AgpCompat.asmApi, classVisitor) {
 
     private var className: String? = null
     private var superName: String? = null
@@ -43,14 +43,12 @@ class PlaitClassVisitor(
             this.isABSClass = true
         }
 
-        if(isABSClass) return
+        if(isABSClass || name == null || Contants.UN_TRACE_CLASS.find { name.contains(it) } != null) return
 
-        val list = getMethodList(className, traceConfig)
-        val blackList = getBlackMethodList(className, traceConfig)
+        val list = getMethodList(name, traceConfig)
+        val blackList = getBlackMethodList(name, traceConfig)
 
-//        if (className?.contains("ckenergy") == true) {
-//            Log.d(TAG, "==== visit main:$name list:$list, blackList:$blackList")
-//        }
+        log( "==== visit main:$name list:$list, blackList:$blackList")
 
         val map = HashMap<String, MutableList<PlaitMethodList>?>()
         val blackMap = HashMap<String, MutableList<PlaitMethodList>?>()
@@ -101,14 +99,17 @@ class PlaitClassVisitor(
             }
             blackMethodMap = blackMap
         }
-//        if (className?.contains("ckenergy") == true) {
-//            Log.d(TAG, "==== visit name:$name, map:$map, black:$blackMap")
-//        }
+        log( "==== visit name:$name, map:$map, black:$blackMap")
         isNeedTrace = !name.isNullOrEmpty() && !map.isNullOrEmpty()
 
-//        if(isNeedTrace && !isABSClass) {
-//            Log.d(TAG, "visit NeedTrace name:$name")
-//        }
+        if(isNeedTrace && !isABSClass) {
+            log( "visit NeedTrace name:$name")
+        }
+    }
+
+    private fun log(info: String) {
+//        if(className?.contains("DateStrings") == true)
+//            Log.d(TAG, info)
     }
 
     //类中方法的入口
@@ -155,26 +156,26 @@ class PlaitClassVisitor(
                 blackAnonList[it.key.replace("@","L")] = it.value
             }
         }
-//        Log.d(PlaintMachineTransform.TAG,"visitMethod name:$name traceMethod:$list,black:$blackList")
+        log("visitMethod name:$name traceMethod:$list,black:$blackList")
         var newList: List<PlaitMethodList>? = list
         if (!list.isNullOrEmpty() && !blackList.isNullOrEmpty()) {
             newList = list!!.filter {//todo 优化算法
                 blackList!!.find { it1 -> it.plaitClass == it1.plaitClass && it.plaitMethod == it1.plaitMethod } == null
             }
         }
-//        Log.d(TAG,"visitMethod name:$className.$name filterList:$newList")
-//        Log.d(TAG,"visitMethod name:$className.$name anonList:$anonList")
-//        Log.d(TAG,"visitMethod name:$className.$name blackAnonList:$blackAnonList")
+        log("visitMethod name:$className.$name filterList:$newList")
+        log("visitMethod name:$className.$name anonList:$anonList")
+        log("visitMethod name:$className.$name blackAnonList:$blackAnonList")
         if (name == "<clinit>" || "<init>" == name || "toString" == name
             || (newList.isNullOrEmpty() && anonList.isNullOrEmpty())) {
-//                Log.d(TAG, "visitMethod name:$className.$name list is empty")
+                log( "visitMethod name:$className.$name list is empty")
             return result
         }
-        return PlaitMethodVisitor(className!!, result, access, name, descriptor, newList, anonList, blackAnonList)
+        return PlaitMethodVisitor(api, className!!, result, access, name, descriptor, newList, anonList, blackAnonList)
     }
 
     override fun visitAnnotation(descriptor: String?, visible: Boolean): AnnotationVisitor {
-//        Log.d(TAG, "visitAnnotation descriptor:$descriptor, visible:$visible")
+        log( "visitAnnotation descriptor:$descriptor, visible:$visible")
         if(!descriptor.isNullOrBlank() && !isABSClass)
             classAnoList.add(descriptor)
         return super.visitAnnotation(descriptor, visible)

@@ -101,6 +101,17 @@ class PlaintMachineTransform : Transform() {
                     plaitMethod = result[1]
                     methodList = listOf(result[1])
                 })
+
+                //添加默认的黑名单
+                Contants.DEFAULT_BLACK_PACKAGE.forEach {
+                    val list3 = blackPackages[it] ?: ArrayList()
+                    blackPackages.put(result[0], list3)
+                    list3.add(PlaitMethodList().apply {
+                        plaitClass = result[0]
+                        plaitMethod = result[1]
+                        methodList = listOf(Contants.ALL)
+                    })
+                }
             }
             return TraceConfig(traceMap, packages, blackPackages)
         }
@@ -146,7 +157,7 @@ class PlaintMachineTransform : Transform() {
             traceConfig = transformMap(extension!!)
         }
 
-        Log.d(TAG, "enable: $enable , traceMap:$traceConfig")
+        log( "enable: $enable , traceMap:$traceConfig")
 
         //是否增量编译
         val isIncremental = transformInvocation!!.isIncremental && this.isIncremental
@@ -159,10 +170,10 @@ class PlaintMachineTransform : Transform() {
         val tasks = ArrayList<Future<*>>()
 
         for (input in inputs) {
-//            Log.d(TAG, "dir: ${input.directoryInputs.size}, isIncremental:$isIncremental")
+//            log( "dir: ${input.directoryInputs.size}, isIncremental:$isIncremental")
             for (directoryInput in input.directoryInputs) {
                 val srcDir = directoryInput.file.absolutePath
-//                Log.d(TAG,"directoryInput: ${srcDir}")
+//                log("directoryInput: ${srcDir}")
                 val dest = outputProvider.getContentLocation(
                     directoryInput.name,
                     directoryInput.contentTypes,
@@ -176,7 +187,7 @@ class PlaintMachineTransform : Transform() {
                     //增量更新，只 操作有改动的文件
                     val fileStatusMap = directoryInput.changedFiles
                     fileStatusMap.forEach { (file, status) ->
-//                        Log.d(TAG,"changedFiles:${file.absolutePath},status:$status")
+//                        log("changedFiles:${file.absolutePath},status:$status")
 
                         if (status == Status.ADDED || status == Status.CHANGED) {
                             if (enable) {
@@ -213,7 +224,7 @@ class PlaintMachineTransform : Transform() {
                     }
                 }
             }
-//            Log.d(TAG,"changedJars size:${input.jarInputs.size}")
+//            log("changedJars size:${input.jarInputs.size}")
             for (inputJar in input.jarInputs) {
                 var destName = inputJar.name
                 // rename jar files
@@ -228,9 +239,9 @@ class PlaintMachineTransform : Transform() {
                     inputJar.scopes,
                     Format.JAR
                 )
-                Log.d(TAG, "jar hexName:$hexName, dest:$dest, destName:$destName")
+//                log( "jar hexName:$hexName, dest:$dest, destName:$destName")
                 if (isIncremental) {//增量更新，只 操作有改动的文件
-//                    Log.d(TAG,"isIncremental inputJar:${inputJar.name},status:${inputJar.status}")
+//                    log("isIncremental inputJar:${inputJar.name},status:${inputJar.status}")
                     val status = inputJar.status
                     if (status == Status.REMOVED) {
                         if (dest?.exists() == true) {
@@ -249,7 +260,7 @@ class PlaintMachineTransform : Transform() {
                         }
                     }
                 } else {
-//                    Log.d(TAG,"inputJar:${inputJar.name}")
+//                    log("inputJar:${inputJar.name}")
                     if (enable) {
                         executor.submit(PlaitJarTask(inputJar.file, dest, traceConfig))
                             .apply { tasks.add(this) }
@@ -268,11 +279,11 @@ class PlaintMachineTransform : Transform() {
 
     private fun plait(file: File, input: String, dest: File): Runnable {
         val destName = file.absolutePath.replace(input, dest.absolutePath)
-//        Log.d(TAG,">>>>>>>>> PlaitAction filter classPath :${file.absolutePath}")
+//        log(">>>>>>>>> PlaitAction filter classPath :${file.absolutePath}")
         return PlaitAction(file, destName, traceConfig)
     }
 
-    private class PlaitAction(
+    private inner class PlaitAction(
         val file: File,
         val dest: String,
         val map: TraceConfig?
@@ -289,12 +300,12 @@ class PlaintMachineTransform : Transform() {
             val classPath = dest
 
             val name = file.name
-//            Log.d(TAG, ">>>>>>>>> classPath :$classPath, fileName:$name")
+//            log( ">>>>>>>>> classPath :$classPath, fileName:$name")
             if (name.endsWith(".class", true)) {
                 val fos = FileOutputStream(classPath)
                 try {
                     val cr = ClassReader(file.readBytes())
-                    val cw = ClassWriter(cr, ClassWriter.COMPUTE_MAXS)
+                    val cw = ClassWriter(cr, ClassWriter.COMPUTE_FRAMES)
                     //需要处理的类使用自定义的visitor来处理
                     val visitor = PlaitClassVisitor(cw, map)
                     cr.accept(visitor, ClassReader.EXPAND_FRAMES)
@@ -303,7 +314,7 @@ class PlaintMachineTransform : Transform() {
                     fos.write(bytes)
                 } catch (e: Exception) {
                     e.printStackTrace()
-                    Log.d(TAG, ">>>>>>>>> PlaitAction:$name error :${e.printStackTrace()}")
+                    log( ">>>>>>>>> PlaitAction:$name error :${e.printStackTrace()}")
                     FileUtils.copyFileToDirectory(file, destDir)
                 } finally {
                     fos.flush()
@@ -316,7 +327,7 @@ class PlaintMachineTransform : Transform() {
 
     }
 
-    private class PlaitJarTask(
+    private inner class PlaitJarTask(
         var fromJar: File,
         val outJar: File,
         val map: TraceConfig?
@@ -340,7 +351,10 @@ class PlaintMachineTransform : Transform() {
                     val zipEntry = enumeration.nextElement()
                     val zipEntryName = zipEntry.name
                     val inputStream = zipFile.getInputStream(zipEntry)
-                    Log.d(TAG,">>>>>>>>> innerTraceMethodFromJar input:$input, output:$output, classPath :$zipEntryName")
+                    if (output.endsWith("0.jar")) {// fixme
+                        log(">>>>>>>>> innerTraceMethodFromJar input:$input, output:$output, classPath :$zipEntryName")
+                    }
+
                     var hasTrace = false
                     try {
                         if (zipEntryName.endsWith(".DSA") || zipEntryName.endsWith(".SF") || zipEntry.isDirectory) {
@@ -360,7 +374,7 @@ class PlaintMachineTransform : Transform() {
                         }
                     }catch (e: Exception) {
                         e.printStackTrace()
-                        Log.d(TAG, "trace jar entry:$zipEntryName error:${e.message}")
+                        log( "trace jar entry:$zipEntryName error:${e.message}")
                     }
                     if (!hasTrace) {
                         val newZipEntry = ZipEntry(zipEntryName)
@@ -369,7 +383,7 @@ class PlaintMachineTransform : Transform() {
                     }
                 }
             } catch (e: java.lang.Exception) {
-                Log.d(TAG, "trace jar:${input.absolutePath} error:${e.message}")
+                log( "trace jar:${input.absolutePath} error:${e.message}")
                 try {
                     Files.copy(input.toPath(), output.toPath(), StandardCopyOption.REPLACE_EXISTING)
                 } catch (e1: java.lang.Exception) {
@@ -387,6 +401,10 @@ class PlaintMachineTransform : Transform() {
                 }
             }
         }
+    }
+
+    private fun log(info: String) {
+//            Log.d(TAG, info)
     }
 
 }

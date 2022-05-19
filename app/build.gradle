@@ -44,7 +44,7 @@ dependencies {
 }
 
 plaitMachine {
-    enable = true //是否启用
+    enable = false //是否启用
     logInfo = true
     plaitClass {//要织入的方法列表
 //        "com/ckenergy/trace/TraceTag.test" {
@@ -61,10 +61,21 @@ plaitMachine {
 //                }
 //            }
 //        }
-        "com/ckenergy/trace/TraceTag.test1" {
+        "com/ckenergy/trace/TraceTag.test" {
             classList {
-                "com/ckenergy/*" { //测试注解
+                "com/*" { //测试注解
                     methodList = ["all*"]
+                }
+            }
+            blackClassList { // 需要过滤的列表
+                "com/ckenergy/lib/TestIgnore" {
+                    methodList = ["all*"]
+                }
+                "com/google/android/material/datepicker/TimeSource" {
+                    methodList = ["fixed"]
+                }
+                "com/google/android/material/datepicker/RangeDateSelector" {
+                    methodList = ["isValidRange"]
                 }
             }
         }

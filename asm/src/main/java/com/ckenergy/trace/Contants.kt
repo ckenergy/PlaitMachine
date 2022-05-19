@@ -10,7 +10,8 @@ object Contants {
     const val ALL = "all*"
     const val TRACE_INFO_CLASS = "com/ckenergy/plaintmachine/PlaitContext"
     val UN_TRACE_CLASS = arrayOf("R.class", "R$", "Manifest", "BuildConfig")
+    val DEFAULT_BLACK_PACKAGE = arrayOf("android/*")
 
-    const val ASM_VERSION = Opcodes.ASM7
+    const val ASM_VERSION = Opcodes.ASM5
 
 }

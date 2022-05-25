@@ -31,7 +31,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             ars.add("position 2");
             ars.add("position 3");
             ars.add("position 4");
-            doSome(5, "doSome", 2.0f, false, ars);
+            doSome(1L, 3.0, 5, "doSome", 2f, false, ars);
         }
     }
 
@@ -46,7 +46,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             byteRes = {10,11},
             chatRes = {'a','b'},
         byteType = 1, shortType = 2, longType = 3, charType = 'c', booleanType = true, floatType = 5.5f, doubleType = 6.6)
-    private void doSome(int type, String name, float f, boolean su, List<String> ars) {
+    private void doSome(long l, double d, int type, String name, float f, boolean su, List<String> ars) {
         Log.e("main", "doSome");
         new Thread(new Runnable() {
             @Override

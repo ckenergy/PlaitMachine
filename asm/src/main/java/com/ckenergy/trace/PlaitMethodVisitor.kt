@@ -61,7 +61,7 @@ class PlaitMethodVisitor @JvmOverloads constructor(
         }else temMethodList
         log( "name:$className.$name, newMethodList1:$newMethodList")
 
-        if (newMethodList.isNullOrEmpty()) {
+        if (newMethodList.isEmpty()) {
             log( "name:$className.$name, method is empty")
             return
         }
@@ -71,21 +71,25 @@ class PlaitMethodVisitor @JvmOverloads constructor(
         val types = Type.getArgumentTypes(descriptor ?: "")
         val size = types.size
 
-        val argsIndex = newArgsArray(size)
+        val argsArrayIndex = newArgsArray(size)
+        var argIndex = if (isStatic) 0 else 1
         types.forEachIndexed { index, type ->
-            mv.visitVarInsn(ALOAD, argsIndex)
-            mv.visitLdcInsn(index)
+            mv.visitVarInsn(ALOAD, argsArrayIndex)
             val opcode = getOpcode(type)
-            mv.visitVarInsn(opcode, if (isStatic) index else index + 1)
+            mv.visitLdcInsn(index)
+            mv.visitVarInsn(opcode, argIndex)
             visitMethod(type, opcode)
             mv.visitInsn(AASTORE)
+            if (opcode == LLOAD || opcode == DLOAD) {
+                argIndex += 2
+            }else {
+                argIndex ++
+            }
         }
-
-        if (true) return//fixme
 
         val mapIndex = visitMap()
         //构建context对象
-        val contextIndex = visitPlaitContext(isStatic, traceName, argsIndex, mapIndex)
+        val contextIndex = visitPlaitContext(isStatic, traceName, argsArrayIndex, mapIndex)
 
         //注入方法
         newMethodList.forEach {

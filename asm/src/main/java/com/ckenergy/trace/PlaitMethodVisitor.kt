@@ -21,6 +21,10 @@ class PlaitMethodVisitor @JvmOverloads constructor(
         HashMap<String, Map<String, Any?>?>()
     }
 
+    private var plaitMethodList: List<PlaitMethodList>? = null
+
+    private var contextIndex = -1
+
     //方法开始,此处可在方法开始插入字节码
     override fun onMethodEnter() {
         super.onMethodEnter()
@@ -54,14 +58,14 @@ class PlaitMethodVisitor @JvmOverloads constructor(
         log( "name:$className.$name, blackMethodList:$blackMethodList")
 
         //todo 优化算法
-        val newMethodList = if (temMethodList.isNotEmpty() && blackMethodList.isNotEmpty()) {
+        plaitMethodList = if (temMethodList.isNotEmpty() && blackMethodList.isNotEmpty()) {
             temMethodList.filter { it1->//去除配置注解黑名单里的方法
                 blackMethodList.find { it.plaitClass == it1.plaitClass && it.plaitMethod == it1.plaitMethod } == null
             }
         }else temMethodList
-        log( "name:$className.$name, newMethodList1:$newMethodList")
+        log( "name:$className.$name, plaitMethodList:$plaitMethodList")
 
-        if (newMethodList.isEmpty()) {
+        if (plaitMethodList.isNullOrEmpty()) {
             log( "name:$className.$name, method is empty")
             return
         }
@@ -89,18 +93,20 @@ class PlaitMethodVisitor @JvmOverloads constructor(
 
         val mapIndex = visitMap()
         //构建context对象
-        val contextIndex = visitPlaitContext(isStatic, traceName, argsArrayIndex, mapIndex)
+        contextIndex = visitPlaitContext(isStatic, traceName, argsArrayIndex, mapIndex)
 
         //注入方法
-        newMethodList.forEach {
-            log( "name:$className.$name, invoke method: ${it.plaitClass}.${it.plaitMethod}")
-            mv.visitVarInsn(ALOAD, contextIndex)
-            mv.visitMethodInsn(
-                INVOKESTATIC,
-                it.plaitClass,
-                it.plaitMethod, "(L${Contants.TRACE_INFO_CLASS};)V",
-                false
-            )
+        plaitMethodList?.forEach {
+            if (!it.isMethodExit && contextIndex >= 0) {
+                log( "name:$className.$name, invoke method: ${it.plaitClass}.${it.plaitMethod}")
+                mv.visitVarInsn(ALOAD, contextIndex)
+                mv.visitMethodInsn(
+                    INVOKESTATIC,
+                    it.plaitClass,
+                    it.plaitMethod, "(L${Contants.TRACE_INFO_CLASS};)V",
+                    false
+                )
+            }
         }
     }
 
@@ -293,6 +299,19 @@ class PlaitMethodVisitor @JvmOverloads constructor(
     override fun onMethodExit(opcode: Int) {
         super.onMethodExit(opcode)
         log("onMethodExit name:$name")
+        //注入方法
+        plaitMethodList?.forEach {
+            if (it.isMethodExit && contextIndex >= 0) {
+                log( "name:$className.$name, invoke method: ${it.plaitClass}.${it.plaitMethod}")
+                mv.visitVarInsn(ALOAD, contextIndex)
+                mv.visitMethodInsn(
+                    INVOKESTATIC,
+                    it.plaitClass,
+                    it.plaitMethod, "(L${Contants.TRACE_INFO_CLASS};)V",
+                    false
+                )
+            }
+        }
     }
 
     private fun visitAnnotationValue(value: Any?, nextIndex: Int) {
@@ -538,7 +557,7 @@ class PlaitMethodVisitor @JvmOverloads constructor(
     }
 
     private fun log(info: String) {
-//            Log.d(TAG, info)
+            Log.d(TAG, info)
     }
 
 //    private fun isGetSetMethod(): Boolean {

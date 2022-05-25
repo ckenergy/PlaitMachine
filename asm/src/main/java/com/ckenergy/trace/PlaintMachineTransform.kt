@@ -76,7 +76,7 @@ class PlaintMachineTransform : Transform() {
                         plaitMethodList.plaitClass = result[0]
                         plaitMethodList.plaitMethod = result[1]
                         plaitMethodList.methodList = it.methodList
-                        plaitMethodList.blackMethodList = black?.methodList
+                        plaitMethodList.isMethodExit = plaitClassExtension.isMethodExit
                         list.add(plaitMethodList)
                     }
                 }
@@ -351,9 +351,6 @@ class PlaintMachineTransform : Transform() {
                     val zipEntry = enumeration.nextElement()
                     val zipEntryName = zipEntry.name
                     val inputStream = zipFile.getInputStream(zipEntry)
-                    if (output.endsWith("0.jar")) {// fixme
-                        log(">>>>>>>>> innerTraceMethodFromJar input:$input, output:$output, classPath :$zipEntryName")
-                    }
 
                     var hasTrace = false
                     try {

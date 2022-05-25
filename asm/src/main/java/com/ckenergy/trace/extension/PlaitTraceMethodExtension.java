@@ -14,6 +14,7 @@ public class PlaitTraceMethodExtension {
      * 要织入的类名和方法名用 . 分割
      */
     public String name;
+    public boolean isMethodExit = false;
 
     /**
      * 定义一个 NamedDomainObjectContainer 属性

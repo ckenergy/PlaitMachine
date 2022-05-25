@@ -62,8 +62,9 @@ plaitMachine {
 //            }
 //        }
         "com/ckenergy/trace/TraceTag.test" {
+            isMethodExit = true
             classList {
-                "com/*" {
+                "com/ckenergy/*" {
                     methodList = ["all*"]
                 }
             }

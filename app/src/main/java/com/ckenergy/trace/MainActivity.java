@@ -20,9 +20,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        HashMap var3 = new HashMap();
-        var3.put("sss", "aaa");
-        TraceTag.test(new PlaitContext("com/ckenergy/trace/MainActivity.onCreate", this, new Object[]{savedInstanceState} , var3));
         Log.e("main", "onCreate");
         setContentView(R.layout.activity_main);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {

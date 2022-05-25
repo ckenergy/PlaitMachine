@@ -9,7 +9,8 @@ public class PlaitMethodList {
     public String plaitClass; //要织入的类名
     public String plaitMethod; //要织入的方法名
     public List<String> methodList;
-    public List<String> blackMethodList;
+
+    public boolean isMethodExit = false;
 
     @Override
     public String toString() {
@@ -17,7 +18,7 @@ public class PlaitMethodList {
                 ",plaitClass='" + plaitClass +
                 ",plaitMethod='" + plaitMethod +
                 ", methodList=" + methodList +
-                ", blackMethodList=" + blackMethodList +
+                ", isMethodExit=" + isMethodExit +
                 '}';
     }
 }

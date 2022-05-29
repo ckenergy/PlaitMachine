@@ -1,6 +1,6 @@
 plugins {
     id 'com.android.application'
-    id 'plait-machine'
+//    id 'plait-machine' todo 编译好ASM模块后再打开
 }
 apply plugin: 'kotlin-android'
 
@@ -43,10 +43,10 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
 }
 
-plaitMachine {
-    enable = true //是否启用
-    logInfo = true
-    plaitClass {//要织入的方法列表
+//plaitMachine { todo 编译好ASM模块后再打开
+//    enable = true //是否启用
+//    logInfo = true//输出日志
+//    plaitClass {//要织入的方法列表
 //        "com/ckenergy/trace/TraceTag.test" {
 //            // 要织入的类名和方法名,注意只能是静态没有参数和返回值的方法
 //            classList { // 需要织入的列表
@@ -55,42 +55,40 @@ plaitMachine {
 //                    methodList = ["all*"]
 //                }
 //            }
-//            blackClassList { // 需要过滤的列表
+//            blackClassList { // 需要过滤的方法
 //                "com/ckenergy/trace/*" {
 //                    methodList = ["doSomeInIgnore"]
 //                }
 //            }
 //        }
-        "com/ckenergy/trace/TraceTag.test" {
-            isMethodExit = true
-            classList {
-                "com/ckenergy/*" {
-                    methodList = ["all*"]
-                }
-            }
-            blackClassList { // 需要过滤的列表
-                "com/ckenergy/lib/TestIgnore" {
-                    methodList = ["all*"]
-                }
-            }
-        }
-//        "com/ckenergy/trace/TraceTag.test1" {
-//            classList {
-////                "com/ckenergy/trace/MainActivity" {
+////        "com/ckenergy/trace/TraceTag.test" {
+////            isMethodExit = true //配置退出时才插入方法
+////            classList {
+////                "com/ckenergy/*" {
 ////                    methodList = ["all*"]
 ////                }
-//                "com/ckenergy/plaintmachine/TestIgnore" {
-//                    methodList = ["doSomeInIgnore"]
-//                }
-//            }
-//            blackClassList { // 需要过滤的列表
-//                "com/ckenergy/trace/*" {
-//                    methodList = ["@com/ckenergy/trace/NoTrace"]
-//                }
-//            }
-//        }
-    }
-}
+////            }
+////            blackClassList { // 需要过滤的类
+////                "com/ckenergy/lib/TestIgnore" {
+////                    methodList = ["all*"]
+////                }
+////            }
+////        }
+////        "com/ckenergy/trace/TraceTag.test1" {
+////            classList {
+////                "com/ckenergy/*" {
+////                    methodList = ["all*"]
+////                }
+////            }
+////            blackClassList { // 需要过滤的注解
+////                "com/ckenergy/*" {
+////                    methodList = ["@com/ckenergy/trace/NoTrace"]
+////                }
+////            }
+////        }
+//    }
+//}
+
 repositories {
     mavenCentral()
 }

@@ -11,7 +11,7 @@ import kotlin.collections.HashMap
 private const val TAG = "===PlaitClassVisitor==="
 class PlaitClassVisitor(
     classVisitor: ClassVisitor, val traceConfig: TraceConfig?
-) : ClassVisitor(AgpCompat.asmApi, classVisitor) {
+) : ClassVisitor(Contants.ASM_VERSION, classVisitor) {
 
     private var className: String? = null
     private var superName: String? = null

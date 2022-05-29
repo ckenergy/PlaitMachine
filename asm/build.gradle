@@ -63,7 +63,7 @@ uploadArchives {
             pom.groupId = 'com.ckenergy.trace'
             pom.artifactId = 'PlaitMachinePlugin'
             pom.version = '0.0.3'
-            repository(url: uri('/Users/mac/.m2/repository'))
+            repository(url: uri(rootProject.ext.repositories_url))
         }
     }
 }

@@ -4,11 +4,11 @@
 buildscript {
     ext.kotlin_version = '1.5.21'
     ext.kotlin_version = "1.4.10"
-    ext.repositories_url = 'C:\\Users\\Administrator\\.m2\\repository'
-//    if (System.properties['os.name'].contains('windows')) {
-//    } else {
-//        ext.repositories_url = '/Users/mac/.m2/repository'
-//    }
+    if (System.properties['os.name'].contains('windows')) {
+        ext.repositories_url = 'C:\\Users\\Administrator\\.m2\\repository'
+    } else {
+        ext.repositories_url = '/Users/mac/.m2/repository'
+    }
     repositories {
         google()
         mavenCentral()

@@ -8,13 +8,13 @@ import android.view.View;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.ckenergy.lib.NoTrace;
 import com.ckenergy.lib.TestIgnore;
-import com.ckenergy.plaintmachine.PlaitContext;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
+@NoTrace
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
     @Override

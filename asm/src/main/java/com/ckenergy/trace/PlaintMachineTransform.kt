@@ -103,13 +103,13 @@ class PlaintMachineTransform : Transform() {
                 })
 
                 //添加默认的黑名单
-                Contants.DEFAULT_BLACK_PACKAGE.forEach {
+                Constants.DEFAULT_BLACK_PACKAGE.forEach {
                     val list3 = blackPackages[it] ?: ArrayList()
                     blackPackages.put(result[0], list3)
                     list3.add(PlaitMethodList().apply {
                         plaitClass = result[0]
                         plaitMethod = result[1]
-                        methodList = listOf(Contants.ALL)
+                        methodList = listOf(Constants.ALL)
                     })
                 }
             }
@@ -352,32 +352,32 @@ class PlaintMachineTransform : Transform() {
                     val zipEntryName = zipEntry.name
                     val inputStream = zipFile.getInputStream(zipEntry)
 
-                    var hasTrace = false
+                    val originBytes = inputStream.readBytes()
+                    var byteArrayInputStream: InputStream? = null
                     try {
-                        if (zipEntryName.endsWith(".DSA") || zipEntryName.endsWith(".SF") || zipEntry.isDirectory) {
-                            //ignore
-                        }else {
-                            val cr = ClassReader(inputStream)
+                        if (zipEntryName.endsWith(".class")) {
+                            val cr = ClassReader(originBytes)
                             val cw = ClassWriter(cr, ClassWriter.COMPUTE_MAXS)
                             //需要处理的类使用自定义的visitor来处理
                             val visitor = PlaitClassVisitor(cw, map)
                             cr.accept(visitor, ClassReader.EXPAND_FRAMES)
 
                             val bytes = cw.toByteArray()
-                            val byteArrayInputStream: InputStream = ByteArrayInputStream(bytes)
-                            val newZipEntry = ZipEntry(zipEntryName)
-                            FileUtil.addZipEntry(zipOutputStream, newZipEntry, byteArrayInputStream)
-                            hasTrace = true
+                            if (bytes.isNotEmpty()) {
+                                byteArrayInputStream = ByteArrayInputStream(bytes)
+                            }
                         }
                     }catch (e: Exception) {
                         e.printStackTrace()
                         log( "trace jar entry:$zipEntryName error:${e.message}")
                     }
-                    if (!hasTrace) {
-                        val newZipEntry = ZipEntry(zipEntryName)
-                        val byteArrayInputStream: InputStream = ByteArrayInputStream(inputStream.readBytes())
-                        FileUtil.addZipEntry(zipOutputStream, newZipEntry, byteArrayInputStream)
+                    if (byteArrayInputStream == null) {
+                        byteArrayInputStream = ByteArrayInputStream(originBytes)
                     }
+                    val newZipEntry = ZipEntry(zipEntryName)
+                    FileUtil.addZipEntry(zipOutputStream, newZipEntry, byteArrayInputStream)
+
+                    inputStream.close()
                 }
             } catch (e: java.lang.Exception) {
                 log( "trace jar:${input.absolutePath} error:${e.message}")
@@ -401,7 +401,7 @@ class PlaintMachineTransform : Transform() {
     }
 
     private fun log(info: String) {
-//            Log.d(TAG, info)
+            Log.d(TAG, info)
     }
 
 }

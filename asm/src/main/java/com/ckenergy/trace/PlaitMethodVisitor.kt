@@ -103,7 +103,7 @@ class PlaitMethodVisitor @JvmOverloads constructor(
                 mv.visitMethodInsn(
                     INVOKESTATIC,
                     it.plaitClass,
-                    it.plaitMethod, "(L${Contants.TRACE_INFO_CLASS};)V",
+                    it.plaitMethod, "(L${Constants.TRACE_INFO_CLASS};)V",
                     false
                 )
             }
@@ -274,7 +274,7 @@ class PlaitMethodVisitor @JvmOverloads constructor(
         objsIndex: Int,
         mapIndex: Int,
     ): Int {
-        mv.visitTypeInsn(NEW, Contants.TRACE_INFO_CLASS)
+        mv.visitTypeInsn(NEW, Constants.TRACE_INFO_CLASS)
         mv.visitInsn(DUP)
         mv.visitLdcInsn(traceName)
         if (isStatic) {
@@ -286,12 +286,12 @@ class PlaitMethodVisitor @JvmOverloads constructor(
         mv.visitVarInsn(ALOAD, mapIndex)
         mv.visitMethodInsn(
             INVOKESPECIAL,
-            Contants.TRACE_INFO_CLASS,
+            Constants.TRACE_INFO_CLASS,
             "<init>",
             "(Ljava/lang/String;Ljava/lang/Object;[Ljava/lang/Object;Ljava/util/HashMap;)V",
             false
         )
-        val traceInfoIndex = newLocal(Type.getType("L"+Contants.TRACE_INFO_CLASS))
+        val traceInfoIndex = newLocal(Type.getType("L"+Constants.TRACE_INFO_CLASS))
         mv.visitVarInsn(ASTORE, traceInfoIndex)
         return traceInfoIndex
     }
@@ -307,7 +307,7 @@ class PlaitMethodVisitor @JvmOverloads constructor(
                 mv.visitMethodInsn(
                     INVOKESTATIC,
                     it.plaitClass,
-                    it.plaitMethod, "(L${Contants.TRACE_INFO_CLASS};)V",
+                    it.plaitMethod, "(L${Constants.TRACE_INFO_CLASS};)V",
                     false
                 )
             }
@@ -508,7 +508,7 @@ class PlaitMethodVisitor @JvmOverloads constructor(
         val key = descriptor.replace(";","")
         val item = annotations[key] as? HashMap ?: HashMap()
         annotations[key] = item
-        return object : AnnotationVisitor(Contants.ASM_VERSION) {
+        return object : AnnotationVisitor(api) {
             override fun visit(name: String?, value: Any?) {
                 super.visit(name, value)
                 log( "visit name:$name, value:$value")
@@ -532,7 +532,7 @@ class PlaitMethodVisitor @JvmOverloads constructor(
                 if (name != null) {
                     val list = ArrayList<Any>()
                     item[name] = list
-                    return object : AnnotationVisitor(Contants.ASM_VERSION) {
+                    return object : AnnotationVisitor(api) {
                         override fun visit(name: String?, value: Any?) {
                             super.visit(name, value)
                             if (value != null) list.add(value)
@@ -557,7 +557,7 @@ class PlaitMethodVisitor @JvmOverloads constructor(
     }
 
     private fun log(info: String) {
-            Log.d(TAG, info)
+//            Log.d(TAG, info)
     }
 
 //    private fun isGetSetMethod(): Boolean {

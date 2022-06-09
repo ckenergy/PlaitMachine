@@ -11,7 +11,7 @@ import kotlin.collections.HashMap
 private const val TAG = "===PlaitClassVisitor==="
 class PlaitClassVisitor(
     classVisitor: ClassVisitor, val traceConfig: TraceConfig?
-) : ClassVisitor(Contants.ASM_VERSION, classVisitor) {
+) : ClassVisitor(Constants.ASM_VERSION, classVisitor) {
 
     private var className: String? = null
     private var superName: String? = null
@@ -43,7 +43,7 @@ class PlaitClassVisitor(
             this.isABSClass = true
         }
 
-        if(isABSClass || name == null || Contants.UN_TRACE_CLASS.find { name.contains(it) } != null) return
+        if(isABSClass || name == null || Constants.UN_TRACE_CLASS.find { name.contains(it) } != null) return
 
         val list = getMethodList(name, traceConfig)
         val blackList = getBlackMethodList(name, traceConfig)
@@ -126,7 +126,7 @@ class PlaitClassVisitor(
         }
         //如果为空再取一遍所有的
         var list = methodListMap?.get(name)
-        methodListMap?.get(Contants.ALL)?.apply {
+        methodListMap?.get(Constants.ALL)?.apply {
             if (list != null) {
                 list!!.addAll(this)
             }else {
@@ -142,7 +142,7 @@ class PlaitClassVisitor(
         }
         var blackList = blackMethodMap?.get(name)
 //        过滤黑名单的方法
-        blackMethodMap?.get(Contants.ALL)?.apply {
+        blackMethodMap?.get(Constants.ALL)?.apply {
             if (blackList != null) {
                 blackList!!.addAll(this)
             }else {

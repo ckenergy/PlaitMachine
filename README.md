@@ -1,4 +1,4 @@
-# plaitmachine
+# PlaitMachine(织布机)
 
 1、	织布机是一个开源的android studio asm编译期进行的插桩插件，可以自定义要插桩的方法、被插入的代码位置和黑名单（要排除）方法。
 
@@ -67,4 +67,18 @@ classList { // 需要织入的列表
 }
 ```
 
-所以有感兴趣想支持和帮助的小伙伴，可以邮件告知我（718235824@qq.com）认领以上的点，或者你有其他的想法也可以
+所以有感兴趣想支持和帮助的小伙伴，可以邮件告知我（2ckenergy@gmail.com）认领以上的点，或者你有其他的想法也可以
+
+Copyright 2022 ckenergy <2ckenergy@gmail.com>
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+

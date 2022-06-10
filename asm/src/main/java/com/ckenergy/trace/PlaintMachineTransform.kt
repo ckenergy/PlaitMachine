@@ -11,13 +11,14 @@ import org.apache.commons.codec.digest.DigestUtils
 import org.gradle.api.NamedDomainObjectContainer
 import org.objectweb.asm.ClassReader
 import org.objectweb.asm.ClassWriter
+import sun.reflect.annotation.AnnotationParser
 import java.io.ByteArrayInputStream
 import java.io.File
 import java.io.FileOutputStream
 import java.io.InputStream
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
-import java.util.HashMap
+import java.util.*
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
 import java.util.zip.ZipEntry

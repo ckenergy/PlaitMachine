@@ -12,9 +12,13 @@ import com.ckenergy.lib.NoTrace;
 import com.ckenergy.lib.TestIgnore;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
-@NoTrace
+import io.leangen.geantyref.AnnotationFormatException;
+import io.leangen.geantyref.TypeFactory;
+
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
     @Override
@@ -23,12 +27,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         Log.e("main", "onCreate");
         setContentView(R.layout.activity_main);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            List<String> ars = new ArrayList<>();
-            ars.add("position 1");
-            ars.add("position 2");
-            ars.add("position 3");
-            ars.add("position 4");
-            doSome(1L, 3.0, 5, "doSome", 2f, false, ars);
+            List<String> list = new ArrayList<>();
+            list.add("position 1");
+            list.add("position 2");
+            list.add("position 3");
+            list.add("position 4");
+            doSome(1L, 3.0, 5, "doSome", 2f, false, list, "ss", 1);
         }
     }
 
@@ -43,7 +47,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             byteRes = {10,11},
             chatRes = {'a','b'},
         byteType = 1, shortType = 2, longType = 3, charType = 'c', booleanType = true, floatType = 5.5f, doubleType = 6.6)
-    private void doSome(long l, double d, int type, String name, float f, boolean su, List<String> ars) {
+    private void doSome(long l, double d, int type, String name, float f, boolean su, List<String> list, Object... args) {
         Log.e("main", "doSome");
         new Thread(new Runnable() {
             @Override
@@ -55,9 +59,19 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         TestIgnore.INSTANCE.doSomeInIgnore("info");
     }
 
-    @NoTrace
+    @NoTrace(1)
     private void doSome1() {
         Log.e("main", "doSome1");
+//        Map<String, Object> map = new HashMap<>();
+//        Integer value = 1;
+//        map.put("value", value);
+//        try {
+//            NoTrace annotation = TypeFactory.annotation(NoTrace.class, map);
+//            Log.e("main", "doSome1 value:"+annotation.value());
+//        } catch (AnnotationFormatException e) {
+//            e.printStackTrace();
+//        }
+
         try {
             Thread.sleep(2000);
         } catch (InterruptedException e) {

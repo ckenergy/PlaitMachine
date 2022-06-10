@@ -67,7 +67,7 @@ classList { // 需要织入的列表
 }
 ```
 
-所以有感兴趣想支持和帮助的小伙伴，可以邮件告知我（2ckenergy@gmail.com）认领以上的点，或者你有其他的想法也可以
+对以上有感兴趣想支持和帮助的小伙伴，可以邮件告知我（2ckenergy@gmail.com）认领以上的点，或者你有其他的想法也可以告知
 
 Copyright 2022 ckenergy <2ckenergy@gmail.com>
 Licensed under the Apache License, Version 2.0 (the "License");

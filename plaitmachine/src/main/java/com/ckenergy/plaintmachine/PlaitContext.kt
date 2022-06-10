@@ -1,68 +1,42 @@
-package com.ckenergy.plaintmachine;
+package com.ckenergy.plaintmachine
 
-import java.util.Arrays;
-import java.util.HashMap;
+import io.leangen.geantyref.TypeFactory
+import java.util.*
+import kotlin.collections.ArrayList
 
 /**
  * Created by chengkai on 2021/7/28.
  */
+class PlaitContext(
+    val methodName: String,
+    val current: Any?,
+    val args: Array<Any>?,
+    annotations: HashMap<String, HashMap<String, Any>>?
+) {
+    val annotationList: MutableList<Annotation?>?
 
-public class PlaitContext {
-
-    private String methodName;
-
-    private Object current;
-
-    private Object[] args;
-
-    private HashMap<String, HashMap<String, Object>> annotations;
-
-    public PlaitContext(String methodName, Object current, Object[] args, HashMap<String, HashMap<String, Object>> annotations) {
-        this.methodName = methodName;
-        this.current = current;
-        this.args = args;
-        this.annotations = annotations;
+    init {
+        if (annotations != null && annotations.isNotEmpty()) {
+            annotationList = ArrayList(annotations.size)
+            println("map:$annotations")
+            annotations.forEach {
+                try {
+                    val annotation = TypeFactory.annotation(Class.forName(it.key.substring(1).replace("/", ".")) as Class<Annotation>, it.value) as Annotation
+//                    val annotation = AnnotationParser.annotationForMap(
+//                        Class.forName(it.key.substring(1).replace("/", ".")) as Class<Annotation>, it.value) as Annotation
+                    annotationList.add(annotation)
+                }catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+        }else {
+            annotationList = null
+        }
     }
 
-    public Object[] getArgs() {
-        return args;
+    override fun toString(): String {
+        return "PlaitContext(methodName='$methodName', current=$current, args=${args?.contentToString()}, annotationList=$annotationList)"
     }
 
-    public void setArgs(Object[] args) {
-        this.args = args;
-    }
 
-    public HashMap<String, HashMap<String, Object>> getAnnotations() {
-        return annotations;
-    }
-
-    public void setAnnotations(HashMap<String, HashMap<String, Object>> annotations) {
-        this.annotations = annotations;
-    }
-
-    public String getMethodName() {
-        return methodName;
-    }
-
-    public void setMethodName(String methodName) {
-        this.methodName = methodName;
-    }
-
-    public Object getCurrent() {
-        return current;
-    }
-
-    public void setCurrent(Object current) {
-        this.current = current;
-    }
-
-    @Override
-    public String toString() {
-        return "TraceInfo{" +
-                "methodName='" + methodName + '\'' +
-                ", current=" + current +
-                ", args=" + Arrays.toString(args) +
-                ", annotations=" + annotations +
-                '}';
-    }
 }

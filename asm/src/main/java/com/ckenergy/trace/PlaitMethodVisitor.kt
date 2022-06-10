@@ -318,68 +318,68 @@ class PlaitMethodVisitor @JvmOverloads constructor(
         fun eachLoad(listIndex: Int, listValue: Any) {
             mv.visitVarInsn(ALOAD, nextIndex)
             mv.visitLdcInsn(listIndex)
-            visiteType(listValue)
+            visiteIntType(listValue)
             mv.visitInsn(AASTORE)
         }
         when (value) {
             is ArrayList<*> -> {
-                newObjArray(nextIndex, value.size)
+                newArray(nextIndex, value.size, "java/lang/Object")
                 value.forEachIndexed { index1, any ->
                     eachLoad(index1, any)
                 }
                 mv.visitVarInsn(ALOAD, nextIndex)
             }
             is ByteArray -> {
-                newObjArray(nextIndex, value.size)
+                newIntArray(nextIndex, value.size, T_BYTE)
                 value.forEachIndexed { index1, i ->
                     eachLoad(index1, i)
                 }
                 mv.visitVarInsn(ALOAD, nextIndex)
             }
             is IntArray -> {
-                newObjArray(nextIndex, value.size)
+                newIntArray(nextIndex, value.size, T_INT)
                 value.forEachIndexed { index1, i ->
                     eachLoad(index1, i)
                 }
                 mv.visitVarInsn(ALOAD, nextIndex)
             }
             is LongArray -> {
-                newObjArray(nextIndex, value.size)
+                newIntArray(nextIndex, value.size, T_LONG)
                 value.forEachIndexed { index1, i ->
                     eachLoad(index1, i)
                 }
                 mv.visitVarInsn(ALOAD, nextIndex)
             }
             is BooleanArray -> {
-                newObjArray(nextIndex, value.size)
+                newIntArray(nextIndex, value.size, T_BOOLEAN)
                 value.forEachIndexed { index1, i ->
                     eachLoad(index1, i)
                 }
                 mv.visitVarInsn(ALOAD, nextIndex)
             }
             is FloatArray -> {
-                newObjArray(nextIndex, value.size)
+                newIntArray(nextIndex, value.size, T_FLOAT)
                 value.forEachIndexed { index1, i ->
                     eachLoad(index1, i)
                 }
                 mv.visitVarInsn(ALOAD, nextIndex)
             }
             is DoubleArray -> {
-                newObjArray(nextIndex, value.size)
+                newIntArray(nextIndex, value.size, T_DOUBLE)
                 value.forEachIndexed { index1, i ->
                     eachLoad(index1, i)
                 }
                 mv.visitVarInsn(ALOAD, nextIndex)
             }
             is CharArray -> {
-                newObjArray(nextIndex, value.size)
+                newIntArray(nextIndex, value.size, T_CHAR)
                 value.forEachIndexed { index1, i ->
                     eachLoad(index1, i)
                 }
                 mv.visitVarInsn(ALOAD, nextIndex)
             }
             is ShortArray -> {
-                newObjArray(nextIndex, value.size)
+                newIntArray(nextIndex, value.size, T_SHORT)
                 value.forEachIndexed { index1, i ->
                     eachLoad(index1, i)
                 }
@@ -391,9 +391,15 @@ class PlaitMethodVisitor @JvmOverloads constructor(
         }
     }
 
-    private fun newObjArray(index: Int, size: Int) {
+    private fun newArray(index: Int, size: Int, type: String) {
         mv.visitLdcInsn(size)
-        mv.visitTypeInsn(ANEWARRAY, "java/lang/Object")
+        mv.visitTypeInsn(ANEWARRAY, type)
+        mv.visitVarInsn(ASTORE, index)
+    }
+
+    private fun newIntArray(index: Int, size: Int, type: Int) {
+        mv.visitLdcInsn(size)
+        mv.visitIntInsn(NEWARRAY, type)
         mv.visitVarInsn(ASTORE, index)
     }
 
@@ -503,6 +509,54 @@ class PlaitMethodVisitor @JvmOverloads constructor(
         }
     }
 
+    private fun visiteIntType(value: Any?) {
+        when (value) {
+            is Int -> {
+                mv.visitLdcInsn(value)
+            }
+            is Short -> {
+                mv.visitLdcInsn(value)
+            }
+            is Boolean -> {
+                mv.visitLdcInsn(value)
+            }
+            is Char -> {
+                mv.visitLdcInsn(value)
+            }
+            is Byte -> {
+                mv.visitLdcInsn(value)
+            }
+            is Float -> {
+                mv.visitLdcInsn(value)
+            }
+            is Double -> {
+                mv.visitLdcInsn(value)
+            }
+            is Long -> {
+                mv.visitLdcInsn(value)
+            }
+            is String -> {
+                mv.visitLdcInsn(value)
+            }
+            is AnnotionWrap -> {
+                val type = Type.getType(value.desc)
+//                Log.d(
+//                    TAG,
+//                    "visiteAnnotationValue class:${type.className}, descriptor:${value.desc}"
+//                )
+                mv.visitFieldInsn(GETSTATIC, type.className.replace(".", "/"),
+                    value.value, value.desc.replace(".", "/"))
+            }
+            else ->{
+//                Log.d(
+//                    TAG,
+//                    "visiteAnnotationValue else ${value?.javaClass}"
+//                )
+                mv.visitLdcInsn(value?.toString())
+            }
+        }
+    }
+
     override fun visitAnnotation(descriptor: String, visible: Boolean): AnnotationVisitor {
         log( "visitAnnotation descriptor:$descriptor, visible:$visible")
         val key = descriptor.replace(";","")
@@ -536,7 +590,7 @@ class PlaitMethodVisitor @JvmOverloads constructor(
                         override fun visit(name: String?, value: Any?) {
                             super.visit(name, value)
                             if (value != null) list.add(value)
-                            log( "visitArray name:$name, value:$value")
+                            log( "visitArray type:${value?.javaClass}, value:$value")
                         }
 
                         override fun visitEnum(name: String?, descriptor: String?, value: String?) {
@@ -557,7 +611,7 @@ class PlaitMethodVisitor @JvmOverloads constructor(
     }
 
     private fun log(info: String) {
-//            Log.d(TAG, info)
+            Log.d(TAG, info)
     }
 
 //    private fun isGetSetMethod(): Boolean {

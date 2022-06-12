@@ -4,7 +4,7 @@
 buildscript {
     ext.kotlin_version = '1.5.21'
     ext.kotlin_version = "1.4.10"
-    if (System.properties['os.name'].contains('windows')) {
+    if (System.properties['os.name'].toString().toLowerCase().contains('windows')) {
         ext.repositories_url = 'C:\\Users\\Administrator\\.m2\\repository'
     } else {
         ext.repositories_url = '/Users/mac/.m2/repository'

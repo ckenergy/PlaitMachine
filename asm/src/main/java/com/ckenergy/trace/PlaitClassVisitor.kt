@@ -49,8 +49,8 @@ class PlaitClassVisitor(
     }
 
     private fun log(info: String) {
-        if (className?.contains("mainAct", true) == true)
-            Log.d(TAG, "className:$className,$info")
+//        if (className?.contains("mainAct", true) == true)
+//            Log.d(TAG, "className:$className,$info")
     }
 
     //类中方法的入口

@@ -11,7 +11,6 @@ import org.apache.commons.codec.digest.DigestUtils
 import org.gradle.api.NamedDomainObjectContainer
 import org.objectweb.asm.ClassReader
 import org.objectweb.asm.ClassWriter
-import sun.reflect.annotation.AnnotationParser
 import java.io.ByteArrayInputStream
 import java.io.File
 import java.io.FileOutputStream

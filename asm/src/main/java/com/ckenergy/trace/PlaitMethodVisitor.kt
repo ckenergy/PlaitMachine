@@ -319,7 +319,6 @@ class PlaitMethodVisitor @JvmOverloads constructor(
             mv.visitVarInsn(ALOAD, nextIndex)
             mv.visitLdcInsn(listIndex)
             visiteIntType(listValue)
-            mv.visitInsn(AASTORE)
         }
         when (value) {
             is ArrayList<*> -> {
@@ -513,30 +512,39 @@ class PlaitMethodVisitor @JvmOverloads constructor(
         when (value) {
             is Int -> {
                 mv.visitLdcInsn(value)
+                mv.visitInsn(IASTORE)
             }
             is Short -> {
                 mv.visitLdcInsn(value)
+                mv.visitInsn(SASTORE)
             }
             is Boolean -> {
                 mv.visitLdcInsn(value)
+                mv.visitInsn(BASTORE)
             }
             is Char -> {
                 mv.visitLdcInsn(value)
+                mv.visitInsn(CASTORE)
             }
             is Byte -> {
                 mv.visitLdcInsn(value)
+                mv.visitInsn(BASTORE)
             }
             is Float -> {
                 mv.visitLdcInsn(value)
+                mv.visitInsn(FASTORE)
             }
             is Double -> {
                 mv.visitLdcInsn(value)
+                mv.visitInsn(DASTORE)
             }
             is Long -> {
                 mv.visitLdcInsn(value)
+                mv.visitInsn(LASTORE)
             }
             is String -> {
                 mv.visitLdcInsn(value)
+                mv.visitInsn(AASTORE)
             }
             is AnnotionWrap -> {
                 val type = Type.getType(value.desc)
@@ -546,6 +554,7 @@ class PlaitMethodVisitor @JvmOverloads constructor(
 //                )
                 mv.visitFieldInsn(GETSTATIC, type.className.replace(".", "/"),
                     value.value, value.desc.replace(".", "/"))
+                mv.visitInsn(AASTORE)
             }
             else ->{
 //                Log.d(
@@ -553,6 +562,7 @@ class PlaitMethodVisitor @JvmOverloads constructor(
 //                    "visiteAnnotationValue else ${value?.javaClass}"
 //                )
                 mv.visitLdcInsn(value?.toString())
+                mv.visitInsn(AASTORE)
             }
         }
     }
@@ -562,7 +572,8 @@ class PlaitMethodVisitor @JvmOverloads constructor(
         val key = descriptor.replace(";","")
         val item = annotations[key] as? HashMap ?: HashMap()
         annotations[key] = item
-        return object : AnnotationVisitor(api) {
+        val annotationVisitor = super.visitAnnotation(descriptor, visible)
+        return object : AnnotationVisitor(api, annotationVisitor) {
             override fun visit(name: String?, value: Any?) {
                 super.visit(name, value)
                 log( "visit name:$name, value:$value")
@@ -583,14 +594,15 @@ class PlaitMethodVisitor @JvmOverloads constructor(
 
             override fun visitArray(name: String?): AnnotationVisitor {
                 log( "visitArray name:$name")
+                val annotationVisitor1 = super.visitArray(name)
                 if (name != null) {
                     val list = ArrayList<Any>()
                     item[name] = list
-                    return object : AnnotationVisitor(api) {
+                    return object : AnnotationVisitor(api, annotationVisitor1) {
                         override fun visit(name: String?, value: Any?) {
                             super.visit(name, value)
                             if (value != null) list.add(value)
-                            log( "visitArray type:${value?.javaClass}, value:$value")
+                            log( "visitArray name:${name}, value:$value")
                         }
 
                         override fun visitEnum(name: String?, descriptor: String?, value: String?) {
@@ -603,7 +615,7 @@ class PlaitMethodVisitor @JvmOverloads constructor(
                         }
                     }
                 } else {
-                    return super.visitArray(name)
+                    return annotationVisitor1
                 }
 
             }

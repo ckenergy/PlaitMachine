@@ -45,7 +45,7 @@ class PlaitClassVisitor(
             this.isABSClass = true
         }
 
-        if(isABSClass || name == null || Constants.UN_TRACE_CLASS.find { name.contains(it) } != null) return
+        if(isABSClass || name == null || Constants.UN_PLAINT_CLASS.find { name.contains(it) } != null) return
     }
 
     private fun log(info: String) {

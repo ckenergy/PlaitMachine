@@ -6,7 +6,6 @@ package com.ckenergy.lib
 object TestIgnore {
 
     fun doSomeInIgnore(info: String) {
-//        Log.e("TestIgnore", "doSomeInIgnore info:$info")
         println("doSomeInIgnore info:$info")
     }
 

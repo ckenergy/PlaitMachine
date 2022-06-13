@@ -69,6 +69,10 @@ classList { // 需要织入的列表
 
 对以上有感兴趣想支持和帮助的小伙伴，可以邮件告知我（2ckenergy@gmail.com）认领以上的点，或者你有其他的想法也可以告知
 
+参考资料：
+1、[matrix](https://github.com/Tencent/matrix)
+2、[sa-sdk-android 神策插件](https://github.com/sensorsdata/sa-sdk-android)
+
 Copyright 2022 ckenergy <2ckenergy@gmail.com>
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.

@@ -32,7 +32,7 @@ plaitClass {//要织入的方法列表
             // 要织入的类名和方法名,注意只能是静态和返回值的方法
             classList { // 需要织入的列表
                 "com/ckenergy/trace/*" { //要织入位置的类名或包名
-                    // 要织入位置 类中的方法 默认去除了<cinit>静态初始化和<init>, toString构造函数 如果需要只需要加入就行了
+                    // 要织入位置 类中的方法 默认去除了Constants.DEFAULT_BLACK_METHOD 里的函数
                     methodList = ["all*"]//all* 代表所有方法
                 }
             }

@@ -1,7 +1,7 @@
 package com.ckenergy.trace
 
 import com.ckenergy.trace.extension.PlaitMethodList
-import com.ckenergy.trace.extension.TraceConfig
+import com.ckenergy.trace.extension.PlaintConfig
 import org.objectweb.asm.AnnotationVisitor
 import org.objectweb.asm.ClassVisitor
 import org.objectweb.asm.MethodVisitor
@@ -10,7 +10,7 @@ import kotlin.collections.HashMap
 
 private const val TAG = "===PlaitClassVisitor==="
 class PlaitClassVisitor(
-    classVisitor: ClassVisitor, val traceConfig: TraceConfig?
+    classVisitor: ClassVisitor, val plaintConfig: PlaintConfig?
 ) : ClassVisitor(Constants.ASM_VERSION, classVisitor) {
 
     private var className: String? = null
@@ -44,13 +44,11 @@ class PlaitClassVisitor(
         if (access and Opcodes.ACC_ABSTRACT > 0 || access and Opcodes.ACC_INTERFACE > 0) {
             this.isABSClass = true
         }
-
-        if(isABSClass || name == null || Constants.UN_PLAINT_CLASS.find { name.contains(it) } != null) return
     }
 
     private fun log(info: String) {
-//        if (className?.contains("mainAct", true) == true)
-//            Log.d(TAG, "className:$className,$info")
+        if (className?.contains("MapCollections", true) == true)
+            Log.d(TAG, "className:$className,$info")
     }
 
     //类中方法的入口
@@ -61,63 +59,35 @@ class PlaitClassVisitor(
         signature: String?,
         exceptions: Array<out String>?
     ): MethodVisitor {
-        initMethodListMap(className)
-
         val result = super.visitMethod(access, name, descriptor, signature, exceptions)
-        if (isABSClass || className.isNullOrEmpty() || !isNeedTrace) {
+        if (isABSClass || className.isNullOrEmpty() || Constants.UN_PLAINT_CLASS.find { className?.contains(it) == true } != null || Constants.DEFAULT_BLACK_METHOD.contains(name)) {
             return result
         }
-        //如果为空再取一遍所有的
-        var list = methodListMap?.get(name)
-        methodListMap?.get(Constants.ALL)?.apply {
-            if (list != null) {
-                list!!.addAll(this)
-            }else {
-                list = this
-            }
+        initFilterMethodListMap(className)
+        if (!isNeedTrace) {
+            return result
         }
-        val anonList = hashMapOf<String, List<PlaitMethodList>?>()
-        //在获取类注解内的方法
-        classAnoList.forEach {
 
-        }
-        methodListMap?.forEach {
-            if (it.key.contains("@")) {
-                anonList[it.key.replace("@","L")] = it.value
-            }
-        }
-        var blackList = blackMethodMap?.get(name)
-//        过滤黑名单的方法
-        blackMethodMap?.get(Constants.ALL)?.apply {
-            if (blackList != null) {
-                blackList!!.addAll(this)
-            }else {
-                blackList = this
-            }
-        }
-        val blackAnonList = hashMapOf<String, List<PlaitMethodList>?>()
-//        过滤黑名单注解的方法
-        blackMethodMap?.forEach {
-            if (it.key.contains("@")) {
-                blackAnonList[it.key.replace("@","L")] = it.value
-            }
-        }
+        //如果为空再取一遍所有的
+        val pair = filterMethodListWithMethodName(name)
+        val list = pair.first
+        val annoList = pair.second
+
+        val blackPair = filterBlackMethodListWithMethodName(name)
+        val blackList = blackPair.first
+        val blackAnonList = blackPair.second
+
         log("visitMethod name:$name traceMethod:$list,black:$blackList")
-        var newList: List<PlaitMethodList>? = list
-        if (!list.isNullOrEmpty() && !blackList.isNullOrEmpty()) {
-            newList = list!!.filter {//todo 优化算法
-                blackList!!.find { it1 -> it.plaitClass == it1.plaitClass && it.plaitMethod == it1.plaitMethod } == null
-            }
-        }
+        val newList = filterMethodWithBlack(list, blackList)
+
         log("visitMethod name:$className.$name filterList:$newList")
-        log("visitMethod name:$className.$name anonList:$anonList")
+        log("visitMethod name:$className.$name anonList:$annoList")
         log("visitMethod name:$className.$name blackAnonList:$blackAnonList")
-        if (name == "<clinit>" || "<init>" == name || "toString" == name
-            || (newList.isNullOrEmpty() && anonList.isNullOrEmpty())) {
+        if (newList.isNullOrEmpty() && annoList.isNullOrEmpty()) {
                 log( "visitMethod name:$className.$name list is empty")
             return result
         }
-        return PlaitMethodVisitor(api, className!!, result, access, name, descriptor, newList, anonList, blackAnonList)
+        return PlaitMethodVisitor(api, className!!, result, access, name, descriptor, newList, annoList, blackAnonList)
     }
 
     override fun visitAnnotation(descriptor: String?, visible: Boolean): AnnotationVisitor {
@@ -130,11 +100,11 @@ class PlaitClassVisitor(
     /**
      * 初始化当前类关联的方法
      */
-    private fun initMethodListMap(name: String?) {
+    private fun initFilterMethodListMap(name: String?) {
         if (name.isNullOrEmpty() || hasInitMethod) return
         hasInitMethod = true
-        val list = getMethodList(name, traceConfig)
-        val blackList = getBlackMethodList(name, traceConfig)
+        val list = filterMethodListWithClass(name, plaintConfig)
+        val blackList = filterBlackMethodListWithClass(name, plaintConfig)
 
         log( "==== visit main:$name list:$list, blackList:$blackList")
 
@@ -191,14 +161,17 @@ class PlaitClassVisitor(
         isNeedTrace = !name.isNullOrEmpty() && !map.isNullOrEmpty()
     }
 
-    private fun getMethodList(className: String?, traceConfig: TraceConfig?): MutableList<PlaitMethodList>? {
-        if (className.isNullOrEmpty() || traceConfig == null || (traceConfig.traceMap.isNullOrEmpty() && traceConfig.packages.isNullOrEmpty())) return null
+    /**
+     * 根据类名 获取过滤的方法
+     */
+    private fun filterMethodListWithClass(className: String?, plaintConfig: PlaintConfig?): MutableList<PlaitMethodList>? {
+        if (className.isNullOrEmpty() || plaintConfig == null || (plaintConfig.classMap.isNullOrEmpty() && plaintConfig.packages.isNullOrEmpty())) return null
 
         val methodlist = arrayListOf<PlaitMethodList>()
 
-        log("packages:${traceConfig.packages}, anno:${classAnoList}")
+        log("packages:${plaintConfig.packages}, anno:${classAnoList}")
 
-        traceConfig.packages?.forEach {
+        plaintConfig.packages?.forEach {
             if (it.value != null) {
                 if (className.startsWith(it.key.replace("*", ""))) {
                     methodlist.addAll(it.value!!)
@@ -209,19 +182,22 @@ class PlaitClassVisitor(
                 }
             }
         }
-        traceConfig.traceMap?.get(className)?.apply {
+        plaintConfig.classMap?.get(className)?.apply {
             methodlist.addAll(this)
         }
         return methodlist
     }
 
-    private fun getBlackMethodList(className: String?, traceConfig: TraceConfig?): MutableList<PlaitMethodList>? {
-        if (className.isNullOrEmpty() || traceConfig == null || traceConfig.blackPackages.isNullOrEmpty()) return null
+    /**
+     * 根据类名 获取过滤的黑名单方法
+     */
+    private fun filterBlackMethodListWithClass(className: String?, plaintConfig: PlaintConfig?): MutableList<PlaitMethodList>? {
+        if (className.isNullOrEmpty() || plaintConfig == null || plaintConfig.blackPackages.isNullOrEmpty()) return null
 
-        log("blackPackages:${traceConfig.blackPackages}, anno:${classAnoList}")
+        log("blackPackages:${plaintConfig.blackPackages}, anno:${classAnoList}")
 
         val methodlist = arrayListOf<PlaitMethodList>()
-        traceConfig.blackPackages?.forEach {
+        plaintConfig.blackPackages?.forEach {
             if (it.value != null) {
                 if (className.startsWith(it.key.replace("*", ""))) {
                     methodlist.addAll(it.value!!)
@@ -233,6 +209,65 @@ class PlaitClassVisitor(
         }
 
         return methodlist
+    }
+
+    /**
+     * 根据方法名过滤
+     */
+    private fun filterMethodListWithMethodName(methodName: String?): Pair<MutableList<PlaitMethodList>?, HashMap<String, List<PlaitMethodList>?>> {
+        //如果为空再取一遍所有的
+        var list = methodListMap?.get(methodName)
+        methodListMap?.get(Constants.ALL)?.apply {
+            if (list != null) {
+                list!!.addAll(this)
+            }else {
+                list = this
+            }
+        }
+        val annoList = hashMapOf<String, List<PlaitMethodList>?>()
+        //在获取类注解内的方法
+        methodListMap?.forEach {
+            if (it.key.contains("@")) {
+                annoList[it.key.replace("@","L")] = it.value
+            }
+        }
+        return list to annoList
+    }
+
+    /**
+     * 根据方法名过滤
+     */
+    private fun filterBlackMethodListWithMethodName(methodName: String?): Pair<MutableList<PlaitMethodList>?, HashMap<String, List<PlaitMethodList>?>> {
+        var blackList = blackMethodMap?.get(methodName)
+//        过滤黑名单的方法
+        blackMethodMap?.get(Constants.ALL)?.apply {
+            if (blackList != null) {
+                blackList!!.addAll(this)
+            }else {
+                blackList = this
+            }
+        }
+        val blackAnonList = hashMapOf<String, List<PlaitMethodList>?>()
+//        过滤黑名单注解的方法
+        blackMethodMap?.forEach {
+            if (it.key.contains("@")) {
+                blackAnonList[it.key.replace("@","L")] = it.value
+            }
+        }
+        return blackList to blackAnonList
+    }
+
+    /**
+     * 从过滤黑名单里的数据
+     */
+    private fun filterMethodWithBlack(list: MutableList<PlaitMethodList>?, blackList: MutableList<PlaitMethodList>?): List<PlaitMethodList>? {
+        var newList: List<PlaitMethodList>? = list
+        if (!list.isNullOrEmpty() && !blackList.isNullOrEmpty()) {
+            newList = list.filter {//todo 优化算法
+                blackList.find { it1 -> it.plaitClass == it1.plaitClass && it.plaitMethod == it1.plaitMethod } == null
+            }
+        }
+        return newList
     }
 
 }

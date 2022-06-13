@@ -5,7 +5,7 @@ import com.android.build.gradle.internal.pipeline.TransformManager
 import com.android.utils.FileUtils
 import com.ckenergy.trace.extension.PlaitExtension
 import com.ckenergy.trace.extension.PlaitMethodList
-import com.ckenergy.trace.extension.TraceConfig
+import com.ckenergy.trace.extension.PlaintConfig
 import com.ckenergy.trace.extension.TraceMethodListExtension
 import org.apache.commons.codec.digest.DigestUtils
 import org.gradle.api.NamedDomainObjectContainer
@@ -35,8 +35,8 @@ class PlaintMachineTransform : Transform() {
             return PlaintMachineTransform()
         }
 
-        private fun transformMap(plaitExtension: PlaitExtension): TraceConfig {
-            val traceMap = HashMap<String, ArrayList<PlaitMethodList>?>()
+        private fun transformMap(plaitExtension: PlaitExtension): PlaintConfig {
+            val classMap = HashMap<String, ArrayList<PlaitMethodList>?>()
             val packages = HashMap<String, ArrayList<PlaitMethodList>?>()
             val blackPackages = HashMap<String, ArrayList<PlaitMethodList>?>()
             /*
@@ -56,7 +56,7 @@ class PlaintMachineTransform : Transform() {
                     val map: HashMap<String, ArrayList<PlaitMethodList>?>
 //                    val black = if (!it.name.endsWith("*")) {暂时不处理
                     val black = if (false) {
-                        map = traceMap
+                        map = classMap
                         plaitClassExtension.blackClassList?.find { it1 -> //com.hh.cc  ,black: com.hh.*
                             (it1.name == it.name || it.name.contains(it1.name.replace("*", "")))
                                     && it1.methodList.find { it2 -> it2 == "all*" } == null
@@ -112,7 +112,7 @@ class PlaintMachineTransform : Transform() {
                     })
                 }
             }
-            return TraceConfig(traceMap, packages, blackPackages)
+            return PlaintConfig(classMap, packages, blackPackages)
         }
 
         private fun checkInBlack(
@@ -133,7 +133,7 @@ class PlaintMachineTransform : Transform() {
 
     var plaintMachineExtension: PlaitExtension? = null
 
-    var traceConfig: TraceConfig? = null
+    var plaintConfig: PlaintConfig? = null
 
     //创建大小为16的线程池
     private val executor = Executors.newFixedThreadPool(16)
@@ -157,10 +157,10 @@ class PlaintMachineTransform : Transform() {
 
         val enable = extension?.enable == true
         if (enable) {
-            traceConfig = transformMap(extension!!)
+            plaintConfig = transformMap(extension!!)
         }
 
-        log( "enable: $enable , traceMap:$traceConfig")
+        log( "enable: $enable , traceMap:$plaintConfig")
 
         //是否增量编译
         val isIncremental = transformInvocation!!.isIncremental && this.isIncremental
@@ -256,7 +256,7 @@ class PlaintMachineTransform : Transform() {
                         }
                     } else {
                         if (enable) {
-                            executor.submit(PlaitJarTask(inputJar.file, dest, traceConfig))
+                            executor.submit(PlaitJarTask(inputJar.file, dest, plaintConfig))
                                 .apply { tasks.add(this) }
                         } else {
                             FileUtils.copyFile(inputJar.file, dest)
@@ -265,7 +265,7 @@ class PlaintMachineTransform : Transform() {
                 } else {
 //                    log("inputJar:${inputJar.name}")
                     if (enable) {
-                        executor.submit(PlaitJarTask(inputJar.file, dest, traceConfig))
+                        executor.submit(PlaitJarTask(inputJar.file, dest, plaintConfig))
                             .apply { tasks.add(this) }
                     } else {
                         FileUtils.copyFile(inputJar.file, dest)
@@ -283,13 +283,13 @@ class PlaintMachineTransform : Transform() {
     private fun plait(file: File, input: String, dest: File): Runnable {
         val destName = file.absolutePath.replace(input, dest.absolutePath)
 //        log(">>>>>>>>> PlaitAction filter classPath :${file.absolutePath}")
-        return PlaitAction(file, destName, traceConfig)
+        return PlaitAction(file, destName, plaintConfig)
     }
 
     private inner class PlaitAction(
         val file: File,
         val dest: String,
-        val map: TraceConfig?
+        val map: PlaintConfig?
     ) :
         Runnable {
 
@@ -333,7 +333,7 @@ class PlaintMachineTransform : Transform() {
     private inner class PlaitJarTask(
         var fromJar: File,
         val outJar: File,
-        val map: TraceConfig?
+        val map: PlaintConfig?
     ) : Runnable {
         override fun run() {
             innerTraceMethodFromJar(fromJar, outJar, map)
@@ -342,7 +342,7 @@ class PlaintMachineTransform : Transform() {
         private fun innerTraceMethodFromJar(
             input: File,
             output: File,
-            map: TraceConfig?
+            map: PlaintConfig?
         ) {
             var zipOutputStream: ZipOutputStream? = null
             var zipFile: ZipFile? = null

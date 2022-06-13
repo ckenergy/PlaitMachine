@@ -4,9 +4,6 @@ import android.util.Log;
 
 import com.ckenergy.plaintmachine.PlaitContext;
 
-import java.lang.annotation.Annotation;
-
-
 public class TraceTag {
 
     private static final String TAG = "TraceTag";
@@ -17,6 +14,6 @@ public class TraceTag {
 
 
     public static void test(PlaitContext plaitContext) {
-        Log.e(TAG, "Test:"+ plaitContext);
+        Log.e(TAG, "Test "+plaitContext);
     }
 }

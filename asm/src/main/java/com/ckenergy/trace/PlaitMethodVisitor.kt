@@ -633,7 +633,7 @@ class PlaitMethodVisitor @JvmOverloads constructor(
     }
 
     private fun log(info: String) {
-            Log.d(TAG, info)
+//            Log.d(TAG, info)
     }
 
 //    private fun isGetSetMethod(): Boolean {

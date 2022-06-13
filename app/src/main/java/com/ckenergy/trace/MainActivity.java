@@ -57,15 +57,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @NoTrace(1)
     private void doSome1() {
         Log.e("main", "doSome1");
-//        Map<String, Object> map = new HashMap<>();
-//        Integer value = 1;
-//        map.put("value", value);
-//        try {
-//            NoTrace annotation = TypeFactory.annotation(NoTrace.class, map);
-//            Log.e("main", "doSome1 value:"+annotation.value());
-//        } catch (AnnotationFormatException e) {
-//            e.printStackTrace();
-//        }
 
         try {
             Thread.sleep(2000);

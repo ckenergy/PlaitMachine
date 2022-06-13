@@ -18,7 +18,6 @@ class PlaitContext(
     init {
         if (annotations != null && annotations.isNotEmpty()) {
             annotationList = ArrayList(annotations.size)
-            println("map:$annotations")
             annotations.forEach {
                 try {
                     val annotation = TypeFactory.annotation(Class.forName(it.key.substring(1).replace("/", ".")) as Class<Annotation>, it.value) as Annotation
@@ -37,6 +36,5 @@ class PlaitContext(
     override fun toString(): String {
         return "PlaitContext(methodName='$methodName', current=$current, args=${args?.contentToString()}, annotationList=$annotationList)"
     }
-
 
 }

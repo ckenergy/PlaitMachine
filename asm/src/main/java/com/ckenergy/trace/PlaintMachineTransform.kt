@@ -94,7 +94,7 @@ class PlaintMachineTransform : Transform() {
 
                 //要插入的方法也加入到黑名单，避免造成循环调用
                 val list2 = blackPackages[result[0]] ?: ArrayList()
-                blackPackages.put(result[0], list2)
+                blackPackages[result[0]] = list2
                 list2.add(PlaitMethodList().apply {
                     plaitClass = result[0]
                     plaitMethod = result[1]
@@ -104,7 +104,7 @@ class PlaintMachineTransform : Transform() {
                 //添加默认的黑名单
                 Constants.DEFAULT_BLACK_PACKAGE.forEach {
                     val list3 = blackPackages[it] ?: ArrayList()
-                    blackPackages.put(it, list3)
+                    blackPackages[it] = list3
                     list3.add(PlaitMethodList().apply {
                         plaitClass = result[0]
                         plaitMethod = result[1]
@@ -126,7 +126,7 @@ class PlaintMachineTransform : Transform() {
         }
 
         private fun log(info: String) {
-            Log.d(TAG, info)
+//            Log.d(TAG, info)
         }
 
     }

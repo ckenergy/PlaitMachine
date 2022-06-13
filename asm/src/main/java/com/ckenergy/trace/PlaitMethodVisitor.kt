@@ -322,7 +322,17 @@ class PlaitMethodVisitor @JvmOverloads constructor(
         }
         when (value) {
             is ArrayList<*> -> {
-                newArray(nextIndex, value.size, "java/lang/Object")
+                if (value.isEmpty()) {
+                    log("visitAnnotationValue ArrayList is empty")
+                    return
+                }
+                val item = value[0]
+                var klass = item.javaClass.name.replace(".","/")
+                if (item is AnnotionWrap) {
+                    val type = Type.getType(item.desc)
+                    klass = type.className.replace(".","/")
+                }
+                newArray(nextIndex, value.size, klass)
                 value.forEachIndexed { index1, any ->
                     eachLoad(index1, any)
                 }

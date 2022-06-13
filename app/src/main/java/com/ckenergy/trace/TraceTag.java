@@ -4,6 +4,8 @@ import android.util.Log;
 
 import com.ckenergy.plaintmachine.PlaitContext;
 
+import java.lang.annotation.Annotation;
+
 
 public class TraceTag {
 

@@ -10,7 +10,7 @@ object Constants {
     const val ALL = "all*"
     const val TRACE_INFO_CLASS = "com/ckenergy/plaintmachine/PlaitContext"
     val UN_TRACE_CLASS = arrayOf("R.class", "R$", "Manifest", "BuildConfig")
-    val DEFAULT_BLACK_PACKAGE = arrayOf("android/*")
+    val DEFAULT_BLACK_PACKAGE = arrayOf("android/*", TRACE_INFO_CLASS)
 
     const val ASM_VERSION = Opcodes.ASM7
 

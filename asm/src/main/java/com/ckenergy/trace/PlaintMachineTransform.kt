@@ -17,7 +17,6 @@ import java.io.FileOutputStream
 import java.io.InputStream
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
-import java.util.*
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
 import java.util.zip.ZipEntry
@@ -105,7 +104,7 @@ class PlaintMachineTransform : Transform() {
                 //添加默认的黑名单
                 Constants.DEFAULT_BLACK_PACKAGE.forEach {
                     val list3 = blackPackages[it] ?: ArrayList()
-                    blackPackages.put(result[0], list3)
+                    blackPackages.put(it, list3)
                     list3.add(PlaitMethodList().apply {
                         plaitClass = result[0]
                         plaitMethod = result[1]
@@ -124,6 +123,10 @@ class PlaintMachineTransform : Transform() {
             return blackList.firstOrNull {
                 className.contains(it.name)
             } != null
+        }
+
+        private fun log(info: String) {
+            Log.d(TAG, info)
         }
 
     }
@@ -398,10 +401,6 @@ class PlaintMachineTransform : Transform() {
                 }
             }
         }
-    }
-
-    private fun log(info: String) {
-            Log.d(TAG, info)
     }
 
 }

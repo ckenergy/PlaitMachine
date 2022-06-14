@@ -16,13 +16,11 @@ import kotlin.Pair;
  */
 public class PlaitContext {
 
-    private static Annotation buildAnnotation(String pre, String key, Map<String, Object> annotations) {
+    private static Annotation buildAnnotation(String key, Map<String, Object> annotations) {
         for (Map.Entry<String, Object> entry : annotations.entrySet()) {
-            System.out.println(pre+"annotations key:" + entry.getKey() + ", type:" + entry.getValue());
             if (entry.getValue() instanceof Pair) {
                 Pair<String, Map> pair = (Pair<String, Map>) entry.getValue();
-                System.out.println(pre+"annotations pair key:" + pair.getFirst() + ", value:" + pair.getSecond());
-                annotations.put(entry.getKey(), buildAnnotation(pre+"==", pair.getFirst(), (Map<String, Object>) pair.getSecond()));
+                annotations.put(entry.getKey(), buildAnnotation(pair.getFirst(), (Map<String, Object>) pair.getSecond()));
             } else if (entry.getValue() instanceof Pair[]) {
                 Pair[] maps = (Pair[]) entry.getValue();
                 if (maps.length > 0) {
@@ -31,7 +29,7 @@ public class PlaitContext {
                     try {
                         annotationList = (Annotation[]) Array.newInstance(Class.forName(className.substring(1).replace("/", ".")), maps.length);
                         for (int i = 0; i < maps.length; i++) {
-                            annotationList[i] = buildAnnotation(pre+"==", className, (Map<String, Object>)maps[i].getSecond());
+                            annotationList[i] = buildAnnotation(className, (Map<String, Object>)maps[i].getSecond());
                         }
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -69,9 +67,8 @@ public class PlaitContext {
             annotationList = new ArrayList<>(annotations.size());
 
             for (Map.Entry<String, HashMap<String, Object>> entry : annotations.entrySet()) {
-                System.out.println("annotations key:" + entry.getKey() + ", type:" + entry.getValue());
                 try {
-                    annotationList.add(buildAnnotation("==", entry.getKey(), entry.getValue()));
+                    annotationList.add(buildAnnotation(entry.getKey(), entry.getValue()));
                 } catch (Exception e) {
                     e.printStackTrace();
                 }

@@ -1,5 +1,7 @@
 package com.ckenergy.plaintmachine;
 
+import org.jetbrains.annotations.Nullable;
+
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
@@ -52,13 +54,16 @@ public class PlaitContext {
 
     private final String methodName;
 
+    @Nullable
     private final Object current;
 
+    @Nullable
     private final Object[] args;
 
+    @Nullable
     private final List<Annotation> annotationList;
 
-    public PlaitContext(String methodName, Object current, Object[] args, HashMap<String, HashMap<String, Object>> annotations) {
+    public PlaitContext(String methodName, @Nullable Object current, @Nullable Object[] args, @Nullable HashMap<String, HashMap<String, Object>> annotations) {
         this.methodName = methodName;
         this.current = current;
         this.args = args;
@@ -79,10 +84,12 @@ public class PlaitContext {
 
     }
 
+    @Nullable
     public List<Annotation> getAnnotationList() {
         return annotationList;
     }
 
+    @Nullable
     public Object[] getArgs() {
         return args;
     }
@@ -91,6 +98,7 @@ public class PlaitContext {
         return methodName;
     }
 
+    @Nullable
     public Object getCurrent() {
         return current;
     }

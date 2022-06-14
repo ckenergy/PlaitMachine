@@ -26,11 +26,12 @@ public class PlaitContext {
             } else if (entry.getValue() instanceof Pair[]) {
                 Pair[] maps = (Pair[]) entry.getValue();
                 if (maps.length > 0) {
-                    Annotation[] annotationList = new Annotation[0];
+                    Annotation[] annotationList = null;
+                    String className = maps[0].getFirst().toString();
                     try {
-                        annotationList = (Annotation[]) Array.newInstance(Class.forName(maps[0].getFirst().toString().substring(1).replace("/", ".")), maps.length);
+                        annotationList = (Annotation[]) Array.newInstance(Class.forName(className.substring(1).replace("/", ".")), maps.length);
                         for (int i = 0; i < maps.length; i++) {
-                            annotationList[i] = buildAnnotation(pre+"==", maps[i].getFirst().toString(), (Map<String, Object>)maps[i].getSecond());
+                            annotationList[i] = buildAnnotation(pre+"==", className, (Map<String, Object>)maps[i].getSecond());
                         }
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -64,8 +65,6 @@ public class PlaitContext {
         this.current = current;
         this.args = args;
 
-        long start = System.currentTimeMillis();
-
         if (annotations != null && !annotations.isEmpty()) {
             annotationList = new ArrayList<>(annotations.size());
 
@@ -80,8 +79,6 @@ public class PlaitContext {
         } else {
             annotationList = null;
         }
-
-        System.out.println("build time:"+(System.currentTimeMillis() - start));
 
     }
 

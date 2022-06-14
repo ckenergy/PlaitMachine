@@ -324,6 +324,7 @@ class PlaitMethodVisitor @JvmOverloads constructor(
             is ArrayList<*> -> {
                 if (value.isEmpty()) {
                     log("visitAnnotationValue ArrayList is empty")
+                    mv.visitInsn(ACONST_NULL)
                     return
                 }
                 val item = value[0]
@@ -615,6 +616,19 @@ class PlaitMethodVisitor @JvmOverloads constructor(
                             log( "visitArray name:${name}, value:$value")
                         }
 
+                        override fun visitAnnotation(
+                            name: String?,
+                            descriptor: String?
+                        ): AnnotationVisitor {
+                            log( "visitArray visitAnnotation :${name}, descriptor:$descriptor")
+                            return super.visitAnnotation(name, descriptor)
+                        }
+
+                        override fun visitArray(name: String?): AnnotationVisitor {
+                            log( "visitArray in visitArray :${name}")
+                            return super.visitArray(name)
+                        }
+
                         override fun visitEnum(name: String?, descriptor: String?, value: String?) {
                             super.visitEnum(name, descriptor, value)
                             if (value != null && descriptor != null) {
@@ -633,7 +647,7 @@ class PlaitMethodVisitor @JvmOverloads constructor(
     }
 
     private fun log(info: String) {
-//            Log.d(TAG, info)
+            Log.d(TAG, info)
     }
 
 //    private fun isGetSetMethod(): Boolean {

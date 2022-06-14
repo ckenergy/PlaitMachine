@@ -126,7 +126,7 @@ class PlaintMachineTransform : Transform() {
         }
 
         private fun log(info: String) {
-//            Log.d(TAG, info)
+            Log.d(TAG, info)
         }
 
     }

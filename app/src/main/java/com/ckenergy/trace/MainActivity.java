@@ -11,7 +11,10 @@ import com.ckenergy.lib.TestIgnore;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.checkerframework.checker.nullness.qual.EnsuresNonNull;
+
 import androidx.annotation.RequiresApi;
+import androidx.annotation.WorkerThread;
 import androidx.appcompat.app.AppCompatActivity;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
@@ -54,7 +57,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         TestIgnore.INSTANCE.doSomeInIgnore("info");
     }
 
-    @NoTrace(1)
+    @org.checkerframework.checker.nullness.qual.EnsuresNonNull.List({@EnsuresNonNull({"this.preferences"}), @EnsuresNonNull({"this.monitoringSample"})})
+    @WorkerThread
     private void doSome1() {
         Log.e("main", "doSome1");
 

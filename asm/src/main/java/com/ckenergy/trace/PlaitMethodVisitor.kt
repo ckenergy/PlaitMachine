@@ -91,7 +91,7 @@ class PlaitMethodVisitor @JvmOverloads constructor(
             }
         }
 
-        val mapIndex = visitMap()
+        val mapIndex = visitAnnotationListMap()
         //构建context对象
         contextIndex = visitPlaitContext(isStatic, traceName, argsArrayIndex, mapIndex)
 
@@ -205,7 +205,7 @@ class PlaitMethodVisitor @JvmOverloads constructor(
         }
     }
 
-    private fun visitMap(): Int {
+    private fun visitAnnotationListMap(): Int {
         log( "annotations:$annotations")
         val index = newLocal(Type.getType(HashMap::class.java))
         mv.visitTypeInsn(NEW, "java/util/HashMap")
@@ -213,6 +213,8 @@ class PlaitMethodVisitor @JvmOverloads constructor(
         mv.visitMethodInsn(INVOKESPECIAL, "java/util/HashMap", "<init>", "()V", false)
         mv.visitVarInsn(ASTORE, index)
 
+        val itemIndex = newLocal(Type.getType(HashMap::class.java))
+        val arrayIndex = newLocal(Type.getType(Array<Any>::class.java))
         annotations.forEach { (key, value) ->
             mv.visitVarInsn(ALOAD, index)
             mv.visitLdcInsn(key)
@@ -224,26 +226,26 @@ class PlaitMethodVisitor @JvmOverloads constructor(
                 false
             )
             mv.visitTypeInsn(CHECKCAST, "java/util/HashMap")
-            mv.visitVarInsn(ASTORE, index + 1)
-            mv.visitVarInsn(ALOAD, index + 1)
+            mv.visitVarInsn(ASTORE, itemIndex)
+            mv.visitVarInsn(ALOAD, itemIndex)
             val l3 = Label()
             mv.visitJumpInsn(IFNONNULL, l3)
             mv.visitTypeInsn(NEW, "java/util/HashMap")
             mv.visitInsn(DUP)
             mv.visitMethodInsn(INVOKESPECIAL, "java/util/HashMap", "<init>", "()V", false)
-            mv.visitVarInsn(ASTORE, index + 1)
+            mv.visitVarInsn(ASTORE, itemIndex)
             mv.visitLabel(l3)
-            mv.visitFrame(
-                F_APPEND,
-                2,
-                arrayOf<Any>("java/util/HashMap", "java/util/HashMap"),
-                0,
-                null
-            )
+//            mv.visitFrame(
+//                F_APPEND,
+//                2,
+//                arrayOf<Any>("java/util/HashMap", "java/util/HashMap"),
+//                0,
+//                null
+//            )
             value?.forEach { (t, u) ->
-                mv.visitVarInsn(ALOAD, index + 1)
+                mv.visitVarInsn(ALOAD, itemIndex)
                 mv.visitLdcInsn(t)
-                visitAnnotationValue(u, index + 2)
+                visitAnnotationValue(u, arrayIndex)
                 mv.visitMethodInsn(
                     INVOKEVIRTUAL,
                     "java/util/HashMap",
@@ -255,7 +257,7 @@ class PlaitMethodVisitor @JvmOverloads constructor(
             }
             mv.visitVarInsn(ALOAD, index)
             mv.visitLdcInsn(key)
-            mv.visitVarInsn(ALOAD, index + 1)
+            mv.visitVarInsn(ALOAD, itemIndex)
             mv.visitMethodInsn(
                 INVOKEVIRTUAL,
                 "java/util/HashMap",
@@ -266,6 +268,40 @@ class PlaitMethodVisitor @JvmOverloads constructor(
             mv.visitInsn(POP)
         }
         return index
+    }
+
+    private fun visiteAnnotationMap(value: Map<*, *>, itemIndex: Int) {
+        val arrayIndex = newLocal(Type.getType(Array<Any>::class.java))
+        mv.visitTypeInsn(NEW, "java/util/HashMap")
+        mv.visitInsn(DUP)
+        mv.visitMethodInsn(INVOKESPECIAL, "java/util/HashMap", "<init>", "()V", false)
+        mv.visitVarInsn(ASTORE, itemIndex)
+        value.forEach { (t, u) ->
+            mv.visitVarInsn(ALOAD, itemIndex)
+            mv.visitLdcInsn(t.toString())
+            visitAnnotationValue(u, arrayIndex)
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                "java/util/HashMap",
+                "put",
+                "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;",
+                false
+            )
+            mv.visitInsn(POP)
+        }
+    }
+
+    private fun visitePair(value: Pair<*, Map<*,*>>, itemIndex: Int) {
+        mv.visitTypeInsn(NEW, "kotlin/Pair")
+        mv.visitInsn(DUP)
+        val mapIndex = newLocal(Type.getType(HashMap::class.java))
+        visiteAnnotationMap(value.second, mapIndex)
+        mv.visitLdcInsn(value.first.toString())
+        mv.visitVarInsn(ALOAD, mapIndex)
+        mv.visitMethodInsn(INVOKESPECIAL, "kotlin/Pair", "<init>", "(Ljava/lang/Object;Ljava/lang/Object;)V", false)
+
+        mv.visitVarInsn(ASTORE, itemIndex)
+
     }
 
     private fun visitPlaitContext(
@@ -497,24 +533,8 @@ class PlaitMethodVisitor @JvmOverloads constructor(
                     false
                 )
             }
-            is String -> {
-                mv.visitLdcInsn(value)
-            }
-            is AnnotionWrap -> {
-                val type = Type.getType(value.desc)
-//                Log.d(
-//                    TAG,
-//                    "visiteAnnotationValue class:${type.className}, descriptor:${value.desc}"
-//                )
-                mv.visitFieldInsn(GETSTATIC, type.className.replace(".", "/"),
-                    value.value, value.desc.replace(".", "/"))
-            }
             else ->{
-//                Log.d(
-//                    TAG,
-//                    "visiteAnnotationValue else ${value?.javaClass}"
-//                )
-                mv.visitLdcInsn(value?.toString())
+                visiteObjValue(value)
             }
         }
     }
@@ -553,9 +573,17 @@ class PlaitMethodVisitor @JvmOverloads constructor(
                 mv.visitLdcInsn(value)
                 mv.visitInsn(LASTORE)
             }
+            else -> {
+                visiteObjValue(value)
+                mv.visitInsn(AASTORE)
+            }
+        }
+    }
+
+    private fun visiteObjValue(value: Any?) {
+        when(value) {
             is String -> {
                 mv.visitLdcInsn(value)
-                mv.visitInsn(AASTORE)
             }
             is AnnotionWrap -> {
                 val type = Type.getType(value.desc)
@@ -565,7 +593,26 @@ class PlaitMethodVisitor @JvmOverloads constructor(
 //                )
                 mv.visitFieldInsn(GETSTATIC, type.className.replace(".", "/"),
                     value.value, value.desc.replace(".", "/"))
-                mv.visitInsn(AASTORE)
+            }
+            is Pair<*,*> -> {
+                if (value.second !is Map<*,*> || (value.second as Map<*, *>).isEmpty()) {
+                    log("visitAnnotationValue ArrayList is empty")
+                    mv.visitInsn(ACONST_NULL)
+                    return
+                }
+                val itemIndex = newLocal(Type.getType(HashMap::class.java))
+                visitePair(value as Pair<*, Map<*, *>>, itemIndex)
+                mv.visitVarInsn(ALOAD, itemIndex)
+            }
+            is HashMap<*, *> -> {
+                if (value.isEmpty()) {
+                    log("visitAnnotationValue ArrayList is empty")
+                    mv.visitInsn(ACONST_NULL)
+                    return
+                }
+                val itemIndex = newLocal(Type.getType(HashMap::class.java))
+                visiteAnnotationMap(value, itemIndex)
+                mv.visitVarInsn(ALOAD, itemIndex)
             }
             else ->{
 //                Log.d(
@@ -573,7 +620,6 @@ class PlaitMethodVisitor @JvmOverloads constructor(
 //                    "visiteAnnotationValue else ${value?.javaClass}"
 //                )
                 mv.visitLdcInsn(value?.toString())
-                mv.visitInsn(AASTORE)
             }
         }
     }
@@ -584,66 +630,7 @@ class PlaitMethodVisitor @JvmOverloads constructor(
         val item = annotations[key] as? HashMap ?: HashMap()
         annotations[key] = item
         val annotationVisitor = super.visitAnnotation(descriptor, visible)
-        return object : AnnotationVisitor(api, annotationVisitor) {
-            override fun visit(name: String?, value: Any?) {
-                super.visit(name, value)
-                log( "visit name:$name, value:$value")
-                if (name != null)
-                    item[name] = value
-            }
-
-            override fun visitEnum(name: String?, descriptor1: String, value: String?) {
-                super.visitEnum(name, descriptor1, value)
-                log("visitEnum name:$name, descriptor:$descriptor1, value:$value")
-                if (name != null) item[name] = value
-            }
-
-            override fun visitAnnotation(name: String?, descriptor: String?): AnnotationVisitor {
-                log( "visitAnnotation name:$name, descriptor:$descriptor")
-                return super.visitAnnotation(name, descriptor)
-            }
-
-            override fun visitArray(name: String?): AnnotationVisitor {
-                log( "visitArray name:$name")
-                val annotationVisitor1 = super.visitArray(name)
-                if (name != null) {
-                    val list = ArrayList<Any>()
-                    item[name] = list
-                    return object : AnnotationVisitor(api, annotationVisitor1) {
-                        override fun visit(name: String?, value: Any?) {
-                            super.visit(name, value)
-                            if (value != null) list.add(value)
-                            log( "visitArray name:${name}, value:$value")
-                        }
-
-                        override fun visitAnnotation(
-                            name: String?,
-                            descriptor: String?
-                        ): AnnotationVisitor {
-                            log( "visitArray visitAnnotation :${name}, descriptor:$descriptor")
-                            return super.visitAnnotation(name, descriptor)
-                        }
-
-                        override fun visitArray(name: String?): AnnotationVisitor {
-                            log( "visitArray in visitArray :${name}")
-                            return super.visitArray(name)
-                        }
-
-                        override fun visitEnum(name: String?, descriptor: String?, value: String?) {
-                            super.visitEnum(name, descriptor, value)
-                            if (value != null && descriptor != null) {
-                                val annotionWrap = AnnotionWrap(descriptor, value)
-                                list.add(annotionWrap)
-                            }
-                            log( "visitArrayEnmum name:$name, value:$value, descriptor:$descriptor， listClass:${list is ArrayList<*>}")
-                        }
-                    }
-                } else {
-                    return annotationVisitor1
-                }
-
-            }
-        }
+        return PlaintAnnotationVisitor(api, annotationVisitor, item)
     }
 
     private fun log(info: String) {

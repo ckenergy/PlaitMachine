@@ -324,7 +324,11 @@ class PlaintMachineTransform : Transform() {
                     fos.close()
                 }
             } else {
-                FileUtils.copyFileToDirectory(file, destDir)
+                try {
+                    FileUtils.copyFileToDirectory(file, destDir)
+                }catch (e: Exception) {
+                    e.printStackTrace()
+                }
             }
         }
 

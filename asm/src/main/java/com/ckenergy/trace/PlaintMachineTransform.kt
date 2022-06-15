@@ -115,16 +115,6 @@ class PlaintMachineTransform : Transform() {
             return PlaintConfig(classMap, packages, blackPackages)
         }
 
-        private fun checkInBlack(
-            className: String,
-            blackList: NamedDomainObjectContainer<TraceMethodListExtension>?
-        ): Boolean {
-            if (blackList.isNullOrEmpty()) return false
-            return blackList.firstOrNull {
-                className.contains(it.name)
-            } != null
-        }
-
         private fun log(info: String) {
             Log.d(TAG, info)
         }

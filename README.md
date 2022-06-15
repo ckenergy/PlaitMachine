@@ -37,7 +37,7 @@ plaitClass {//要织入的方法列表
 1、第一次打开工程需要先编译asm 模块下的uploadarchives生成本地插件，否则将插件无法生效
 ![img.png](img.png)
 
-按图示点击uploadarchives即可生成本地插件，或者使用命令行输入当前工程.\gradlew uploadarchives（注意mac下使用./）
+按图示点击uploadarchives即可生成本地插件，或者使用命令行输入，当前工程位置 .\gradlew uploadarchives（注意mac下使用./）
 
 2、编译好以后则可以去掉下列注释
 

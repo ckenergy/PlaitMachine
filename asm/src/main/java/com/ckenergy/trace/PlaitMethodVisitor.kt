@@ -7,14 +7,14 @@ import org.objectweb.asm.commons.AdviceAdapter
 private const val TAG = "===PlaitMethodVisitor==="
 class PlaitMethodVisitor @JvmOverloads constructor(
     api: Int,
-    val className: String,
     methodVisitor: MethodVisitor,
     access: Int,
     name: String?,
-    val descriptor: String?,
-    val methodList: List<PlaitMethodList>?,
-    val annoMap: Map<String, List<PlaitMethodList>?>? = null,
-    val blackAnnoMap: Map<String, List<PlaitMethodList>?>? = null,
+    private val className: String,
+    private val descriptor: String?,
+    private val methodList: List<PlaitMethodList>?,
+    private val annotationMap: Map<String, List<PlaitMethodList>?>? = null,
+    private val blackAnnotationMap: Map<String, List<PlaitMethodList>?>? = null,
 ) : AdviceAdapter(api, methodVisitor, access, name, descriptor) {
 
     private val annotations by lazy{
@@ -28,42 +28,10 @@ class PlaitMethodVisitor @JvmOverloads constructor(
     //方法开始,此处可在方法开始插入字节码
     override fun onMethodEnter() {
         super.onMethodEnter()
-        val traceName = "$className.$name"
-        log( "onMethodEnter name:$traceName")
+        val methodName = "$className.$name"
+        log( "onMethodEnter name:$methodName")
 
-        val temMethodList = arrayListOf<PlaitMethodList>()
-        if (!annoMap.isNullOrEmpty()) {
-            annotations.forEach {
-                annoMap[it.key]?.apply {
-                    temMethodList.addAll(this)
-                }
-            }
-        }
-
-        if (!methodList.isNullOrEmpty())
-            temMethodList.addAll(methodList)
-
-        if (temMethodList.isEmpty()) return
-
-        log( "name:$className.$name, temMethodList:$temMethodList")
-
-        val blackMethodList = arrayListOf<PlaitMethodList>()
-        if (!blackAnnoMap.isNullOrEmpty()) {
-            annotations.forEach {
-                blackAnnoMap[it.key]?.apply {
-                    blackMethodList.addAll(this)
-                }
-            }
-        }
-        log( "name:$className.$name, blackMethodList:$blackMethodList")
-
-        //todo 优化算法
-        plaitMethodList = if (temMethodList.isNotEmpty() && blackMethodList.isNotEmpty()) {
-            temMethodList.filter { it1->//去除配置注解黑名单里的方法
-                blackMethodList.find { it.plaitClass == it1.plaitClass && it.plaitMethod == it1.plaitMethod } == null
-            }
-        }else temMethodList
-        log( "name:$className.$name, plaitMethodList:$plaitMethodList")
+        filterPlaintList()
 
         if (plaitMethodList.isNullOrEmpty()) {
             log( "name:$className.$name, method is empty")
@@ -93,7 +61,7 @@ class PlaitMethodVisitor @JvmOverloads constructor(
 
         val mapIndex = visitAnnotationListMap()
         //构建context对象
-        contextIndex = visitPlaitContext(isStatic, traceName, argsArrayIndex, mapIndex)
+        contextIndex = visitPlaitContext(isStatic, methodName, argsArrayIndex, mapIndex)
 
         //注入方法
         plaitMethodList?.forEach {
@@ -108,6 +76,45 @@ class PlaitMethodVisitor @JvmOverloads constructor(
                 )
             }
         }
+    }
+
+    /**
+     * 过滤要插入的方法
+     */
+    private fun filterPlaintList() {
+        val temMethodList = arrayListOf<PlaitMethodList>()
+        if (!annotationMap.isNullOrEmpty()) {
+            annotations.forEach {
+                annotationMap[it.key]?.apply {
+                    temMethodList.addAll(this)
+                }
+            }
+        }
+
+        if (!methodList.isNullOrEmpty())
+            temMethodList.addAll(methodList)
+
+        if (temMethodList.isEmpty()) return
+
+        log( "name:$className.$name, temMethodList:$temMethodList")
+
+        val blackMethodList = arrayListOf<PlaitMethodList>()
+        if (!blackAnnotationMap.isNullOrEmpty()) {
+            annotations.forEach {
+                blackAnnotationMap[it.key]?.apply {
+                    blackMethodList.addAll(this)
+                }
+            }
+        }
+        log( "name:$className.$name, blackMethodList:$blackMethodList")
+
+        //todo 优化算法
+        plaitMethodList = if (temMethodList.isNotEmpty() && blackMethodList.isNotEmpty()) {
+            temMethodList.filter { it1->//去除配置注解黑名单里的方法
+                blackMethodList.find { it.plaitClass == it1.plaitClass && it.plaitMethod == it1.plaitMethod } == null
+            }
+        }else temMethodList
+        log( "name:$className.$name, plaitMethodList:$plaitMethodList")
     }
 
     private fun newArgsArray(size: Int): Int {
@@ -299,13 +306,13 @@ class PlaitMethodVisitor @JvmOverloads constructor(
 
     private fun visitPlaitContext(
         isStatic: Boolean,
-        traceName: String,
+        methodName: String,
         objsIndex: Int,
         mapIndex: Int,
     ): Int {
         mv.visitTypeInsn(NEW, Constants.PLAINT_CONTEXT_CLASS)
         mv.visitInsn(DUP)
-        mv.visitLdcInsn(traceName)
+        mv.visitLdcInsn(methodName)
         if (isStatic) {
             mv.visitInsn(ACONST_NULL);
         } else {

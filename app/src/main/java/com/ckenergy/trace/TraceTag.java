@@ -12,7 +12,6 @@ public class TraceTag {
         Log.e(TAG, "Test1:"+ plaitContext);
     }
 
-
     public static void test(PlaitContext plaitContext) {
         Log.e(TAG, "Test "+plaitContext);
     }

@@ -8,6 +8,31 @@
 
 4、支持增量编译，只会对修改过的类进行插桩。
 
+### 使用方式
+
+```groovy
+plaitClass {//要织入的方法列表
+        "com/ckenergy/trace/TraceTag.test" {
+            // 要织入的类名和方法名,注意只能是静态和返回值的方法
+            classList { // 需要织入的列表
+                "com/ckenergy/trace/*" { //要织入位置的类名或包名
+                    // 要织入位置 类中的方法 默认去除了Constants.DEFAULT_BLACK_METHOD 里的函数
+                    methodList = ["all*"]//all* 代表所有方法
+                }
+            }
+        }
+        blackClassList { // 需要过滤的方法
+            "com/ckenergy/trace/*" {//类名或包名
+                methodList = ["doSomeInIgnore"]
+            }
+            "com/ckenergy/*" {//配置注解
+                methodList = ["@com/ckenergy/trace/NoTrace"]
+            }
+        }
+    .....
+}
+```
+
 ## 重要！！！
 1、第一次打开工程需要先编译asm 模块下的uploadarchives生成本地插件，否则将插件无法生效
 ![img.png](img.png)
@@ -41,31 +66,7 @@
 ```
 ps:SafeIterableMap类已加入了全局黑名单
 
-### 使用方式
-
-```groovy
-plaitClass {//要织入的方法列表
-        "com/ckenergy/trace/TraceTag.test" {
-            // 要织入的类名和方法名,注意只能是静态和返回值的方法
-            classList { // 需要织入的列表
-                "com/ckenergy/trace/*" { //要织入位置的类名或包名
-                    // 要织入位置 类中的方法 默认去除了Constants.DEFAULT_BLACK_METHOD 里的函数
-                    methodList = ["all*"]//all* 代表所有方法
-                }
-            }
-        }
-        blackClassList { // 需要过滤的方法
-            "com/ckenergy/trace/*" {//类名或包名
-                methodList = ["doSomeInIgnore"]
-            }
-            "com/ckenergy/*" {//配置注解
-                methodList = ["@com/ckenergy/trace/NoTrace"]
-            }
-        }
-    .....
-}
-```
-
+4、虽然使用gradle的Transform支持了增量编译，但是只支持java和kotlin等文件的变更，如果是gradle里变更了配置（例如添加了黑名单之类的），需要clean一下
 
 ### 还需要优化的地方 TODO
 

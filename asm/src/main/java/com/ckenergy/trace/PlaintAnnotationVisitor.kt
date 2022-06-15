@@ -1,6 +1,7 @@
 package com.ckenergy.trace
 
 import org.objectweb.asm.AnnotationVisitor
+import org.objectweb.asm.Type
 
 private const val TAG = "===PlaintAnnotationVisitor==="
 /**
@@ -27,7 +28,7 @@ class PlaintAnnotationVisitor(api: Int, annotationVisitor: AnnotationVisitor?, v
         val annotationVisitor1 = super.visitArray(name)
         return if (name != null && descriptor != null) {
             val map = hashMapOf<String, Any?>()
-            annoMap["$name"] = descriptor.replace(";", "") to map
+            annoMap["$name"] = Type.getType(descriptor).className to map
             PlaintAnnotationVisitor(api, annotationVisitor1, map)
         } else {
             annotationVisitor1

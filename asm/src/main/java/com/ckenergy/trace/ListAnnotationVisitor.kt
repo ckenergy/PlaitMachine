@@ -1,6 +1,7 @@
 package com.ckenergy.trace
 
 import org.objectweb.asm.AnnotationVisitor
+import org.objectweb.asm.Type
 
 private const val TAG = "===ListAnnotationVisitor==="
 /**
@@ -26,7 +27,7 @@ class ListAnnotationVisitor(api: Int, annotationVisitor: AnnotationVisitor?, val
             return annotationVisitor
         }
         val map = hashMapOf<String, Any?>()
-        list.add(descriptor.replace(";", "") to map)
+        list.add(Type.getType(descriptor).className to map)
         return PlaintAnnotationVisitor(api, annotationVisitor, map)
     }
 

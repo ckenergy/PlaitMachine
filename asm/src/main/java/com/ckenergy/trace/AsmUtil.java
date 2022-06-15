@@ -1,6 +1,5 @@
 package com.ckenergy.trace;
 
-import groovy.transform.CompileStatic;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.objectweb.asm.Opcodes;

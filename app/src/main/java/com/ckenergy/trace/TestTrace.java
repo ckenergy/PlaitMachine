@@ -37,4 +37,6 @@ public @interface TestTrace {
     boolean booleanType() default false;
     short shortType() default 0;
 
+    Class testType();
+
 }

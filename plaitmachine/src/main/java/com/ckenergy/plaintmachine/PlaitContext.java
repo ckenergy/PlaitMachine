@@ -29,7 +29,7 @@ public class PlaitContext {
                     Annotation[] annotationList = null;
                     String className = maps[0].getFirst().toString();
                     try {
-                        annotationList = (Annotation[]) Array.newInstance(Class.forName(className.substring(1).replace("/", ".")), maps.length);
+                        annotationList = (Annotation[]) Array.newInstance(Class.forName(className.replace("/", ".")), maps.length);
                         for (int i = 0; i < maps.length; i++) {
                             annotationList[i] = buildAnnotation(className, (Map<String, Object>)maps[i].getSecond());
                         }
@@ -44,7 +44,7 @@ public class PlaitContext {
             }
         }
         try {
-            Class<Annotation> annotationClass = (Class<Annotation>) Class.forName(key.substring(1).replace("/", "."));
+            Class<Annotation> annotationClass = (Class<Annotation>) Class.forName(key.replace("/", "."));
             return TypeFactory.annotation(annotationClass, annotations);
         } catch (Exception e) {
             e.printStackTrace();

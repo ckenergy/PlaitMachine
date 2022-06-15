@@ -235,13 +235,6 @@ class PlaitMethodVisitor @JvmOverloads constructor(
             mv.visitMethodInsn(INVOKESPECIAL, "java/util/HashMap", "<init>", "()V", false)
             mv.visitVarInsn(ASTORE, itemIndex)
             mv.visitLabel(l3)
-//            mv.visitFrame(
-//                F_APPEND,
-//                2,
-//                arrayOf<Any>("java/util/HashMap", "java/util/HashMap"),
-//                0,
-//                null
-//            )
             value?.forEach { (t, u) ->
                 mv.visitVarInsn(ALOAD, itemIndex)
                 mv.visitLdcInsn(t)
@@ -587,16 +580,15 @@ class PlaitMethodVisitor @JvmOverloads constructor(
             }
             is AnnotionWrap -> {
                 val type = Type.getType(value.desc)
-//                Log.d(
-//                    TAG,
-//                    "visiteAnnotationValue class:${type.className}, descriptor:${value.desc}"
-//                )
+                log(
+                    "visiteAnnotationValue AnnotionWrap :${type.className}, descriptor:${value.desc}"
+                )
                 mv.visitFieldInsn(GETSTATIC, type.className.replace(".", "/"),
                     value.value, value.desc.replace(".", "/"))
             }
             is Pair<*,*> -> {
                 if (value.second !is Map<*,*> || (value.second as Map<*, *>).isEmpty()) {
-                    log("visitAnnotationValue ArrayList is empty")
+                    log("visitAnnotationValue Pair second is empty")
                     mv.visitInsn(ACONST_NULL)
                     return
                 }
@@ -606,7 +598,7 @@ class PlaitMethodVisitor @JvmOverloads constructor(
             }
             is HashMap<*, *> -> {
                 if (value.isEmpty()) {
-                    log("visitAnnotationValue ArrayList is empty")
+                    log("visitAnnotationValue HashMap is empty")
                     mv.visitInsn(ACONST_NULL)
                     return
                 }
@@ -614,11 +606,16 @@ class PlaitMethodVisitor @JvmOverloads constructor(
                 visiteAnnotationMap(value, itemIndex)
                 mv.visitVarInsn(ALOAD, itemIndex)
             }
+            is Class<*> -> {
+                log("visiteAnnotationValue Class $value")
+                mv.visitLdcInsn(Type.getType(value))
+            }
+            is Type -> {
+                log("visiteAnnotationValue type $value")
+                mv.visitLdcInsn(value)
+            }
             else ->{
-//                Log.d(
-//                    TAG,
-//                    "visiteAnnotationValue else ${value?.javaClass}"
-//                )
+                log("visiteAnnotationValue else ${value?.javaClass}")
                 mv.visitLdcInsn(value?.toString())
             }
         }
@@ -626,7 +623,7 @@ class PlaitMethodVisitor @JvmOverloads constructor(
 
     override fun visitAnnotation(descriptor: String, visible: Boolean): AnnotationVisitor {
         log( "visitAnnotation descriptor:$descriptor, visible:$visible")
-        val key = descriptor.replace(";","")
+        val key = Type.getType(descriptor).className
         val item = annotations[key] as? HashMap ?: HashMap()
         annotations[key] = item
         val annotationVisitor = super.visitAnnotation(descriptor, visible)

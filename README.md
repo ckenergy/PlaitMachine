@@ -24,6 +24,23 @@
 
 注：如果第一次打开发现自己无法编译，则可以查看下当前内容是否注释了
 
+3、假如因为插入的方法太多，造成了循环调用，则需要把可能循环调用的方法加入到黑名单
+例如
+
+![img_5.png](img_5.png)
+
+这里因为SafeIterableMap.iterator方法插入了TraceTag.test，而TraceTag.test里最终又调用了SafeIterableMap.iterator，造成了循环调用
+则需要在黑名单里加入这个方法避免
+
+```groovy
+    blackClassList { // 需要过滤的方法
+            "androidx/arch/core/internal/SafeIterableMap" {//类名或包名
+                methodList = ["iterator"]
+            }
+        }
+```
+ps:SafeIterableMap类已加入了全局黑名单
+
 ### 使用方式
 
 ```groovy
@@ -71,6 +88,7 @@ classList { // 需要织入的列表
 
 参考资料：
 1、[matrix](https://github.com/Tencent/matrix)
+
 2、[sa-sdk-android 神策插件](https://github.com/sensorsdata/sa-sdk-android)
 
 Copyright 2022 ckenergy <2ckenergy@gmail.com>

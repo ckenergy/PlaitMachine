@@ -103,7 +103,7 @@ class PlaitMethodVisitor @JvmOverloads constructor(
                 mv.visitMethodInsn(
                     INVOKESTATIC,
                     it.plaitClass,
-                    it.plaitMethod, "(L${Constants.TRACE_INFO_CLASS};)V",
+                    it.plaitMethod, "(L${Constants.PLAINT_CONTEXT_CLASS};)V",
                     false
                 )
             }
@@ -310,7 +310,7 @@ class PlaitMethodVisitor @JvmOverloads constructor(
         objsIndex: Int,
         mapIndex: Int,
     ): Int {
-        mv.visitTypeInsn(NEW, Constants.TRACE_INFO_CLASS)
+        mv.visitTypeInsn(NEW, Constants.PLAINT_CONTEXT_CLASS)
         mv.visitInsn(DUP)
         mv.visitLdcInsn(traceName)
         if (isStatic) {
@@ -322,12 +322,12 @@ class PlaitMethodVisitor @JvmOverloads constructor(
         mv.visitVarInsn(ALOAD, mapIndex)
         mv.visitMethodInsn(
             INVOKESPECIAL,
-            Constants.TRACE_INFO_CLASS,
+            Constants.PLAINT_CONTEXT_CLASS,
             "<init>",
             "(Ljava/lang/String;Ljava/lang/Object;[Ljava/lang/Object;Ljava/util/HashMap;)V",
             false
         )
-        val traceInfoIndex = newLocal(Type.getType("L"+Constants.TRACE_INFO_CLASS))
+        val traceInfoIndex = newLocal(Type.getType("L"+Constants.PLAINT_CONTEXT_CLASS))
         mv.visitVarInsn(ASTORE, traceInfoIndex)
         return traceInfoIndex
     }
@@ -343,7 +343,7 @@ class PlaitMethodVisitor @JvmOverloads constructor(
                 mv.visitMethodInsn(
                     INVOKESTATIC,
                     it.plaitClass,
-                    it.plaitMethod, "(L${Constants.TRACE_INFO_CLASS};)V",
+                    it.plaitMethod, "(L${Constants.PLAINT_CONTEXT_CLASS};)V",
                     false
                 )
             }

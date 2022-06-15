@@ -8,12 +8,12 @@ import org.objectweb.asm.Opcodes
 object Constants {
 
     const val ALL = "all*"
-    const val TRACE_INFO_CLASS = "com/ckenergy/plaintmachine/PlaitContext"
+    const val PLAINT_CONTEXT_CLASS = "com/ckenergy/plaintmachine/PlaitContext"
 
     /**
      * 默认过滤的类
      */
-    val UN_PLAINT_CLASS = arrayOf("R.class", "R$", "Manifest", "BuildConfig",TRACE_INFO_CLASS,
+    val UN_PLAINT_CLASS = arrayOf("R.class", "R$", "Manifest", "BuildConfig", PLAINT_CONTEXT_CLASS,
         //部分情况toString会造成循环调用，所以先把这几个方法过滤了
         "androidx/arch/core/internal/SafeIterableMap",
         "androidx/collection/SimpleArrayMap",

@@ -1,5 +1,5 @@
-rootProject.name = "plaitMachine"
+rootProject.name = "plait"
 include ':app'
 include ':asm'
-include ':plaitmachine'
+include ':plait'
 include ':lib'

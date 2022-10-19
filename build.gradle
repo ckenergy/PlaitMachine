@@ -2,14 +2,14 @@
 
 
 buildscript {
-    ext.kotlin_version = '1.5.21'
-    ext.kotlin_version = "1.4.10"
+    ext.kotlin_version = "1.7.10"
     if (System.properties['os.name'].toString().toLowerCase().contains('windows')) {
         ext.repositories_url = 'C:\\Users\\Administrator\\.m2\\repository'
     } else {
-        ext.repositories_url = '/Users/mac/.m2/repository'
+        ext.repositories_url = '/Users/ckenergy/.m2/repository'
     }
     repositories {
+        mavenLocal()
         google()
         mavenCentral()
         //添加仓库地址
@@ -21,14 +21,18 @@ buildscript {
         classpath "com.android.tools.build:gradle:4.1.3"
         classpath 'com.github.dcendents:android-maven-gradle-plugin:2.0'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.6.20"
-//        classpath("com.ckenergy.trace:PlaitMachinePlugin:0.0.3") { changing = true } todo 编译好ASM模块后再打开
         // NOTE: Do not place your application dependencies here; they belong
         // in the individual module build.gradle files
     }
 }
 
+plugins {
+    id 'plait-machine'
+}
+
 allprojects {
     repositories {
+        mavenLocal()
         google()
         mavenCentral()
         maven {

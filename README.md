@@ -33,23 +33,11 @@ plaitClass {//要织入的方法列表
 }
 ```
 
-## 重要！！！
-1、第一次打开工程需要先编译asm 模块下的uploadarchives生成本地插件，否则将插件无法生效
-![img.png](img.png)
-
 按图示点击uploadarchives即可生成本地插件，或者使用命令行输入，当前工程位置 .\gradlew uploadarchives（注意mac下使用./）
 
-2、编译好以后则可以去掉下列注释
+## 重要！！！
 
-![img_1.png](img_1.png)
-
-![img_2.png](img_2.png)
-
-![img_3.png](img_3.png)
-
-注：如果第一次打开发现自己无法编译，则可以查看下当前内容是否注释了
-
-3、假如因为插入的方法太多，造成了循环调用，则需要把可能循环调用的方法加入到黑名单
+1、假如因为插入的方法太多，造成了循环调用，则需要把可能循环调用的方法加入到黑名单
 例如
 
 ![img_5.png](img_5.png)
@@ -66,7 +54,7 @@ plaitClass {//要织入的方法列表
 ```
 ps:SafeIterableMap类已加入了全局黑名单
 
-4、虽然使用gradle的Transform支持了增量编译，但是只支持java和kotlin等文件的变更，如果是gradle里变更了配置（例如添加了黑名单之类的），需要clean一下
+2、虽然使用gradle的Transform支持了增量编译，但是只支持java和kotlin等文件的变更，如果是gradle里变更了配置（例如添加了黑名单之类的），需要clean一下
 
 ### 还需要优化的地方 TODO
 

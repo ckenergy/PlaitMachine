@@ -1,6 +1,6 @@
-rootProject.name = "plaitMachine"
+rootProject.name = "plait"
 include ':app'
 //include ':asm'
-include ':plaitmachine'
+include ':plait'
 includeBuild('./PlaitPlugin')
 include ':lib'

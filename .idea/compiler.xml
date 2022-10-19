@@ -1,12 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="CompilerConfiguration">
-    <bytecodeTargetLevel target="1.7">
+    <bytecodeTargetLevel target="1.8">
       <module name="plaitMachine.app" target="11" />
-      <module name="plaitMachine.asm" target="1.8" />
-      <module name="plaitMachine.asm.main" target="1.8" />
-      <module name="plaitMachine.asm.test" target="1.8" />
-      <module name="plaitMachine.plaitmachine" target="11" />
     </bytecodeTargetLevel>
   </component>
 </project>

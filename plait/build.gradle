@@ -19,7 +19,7 @@ uploadArchives {
     repositories {
         mavenDeployer {
             pom.groupId = 'com.ckenergy.trace'
-            pom.artifactId = 'Plaint'
+            pom.artifactId = 'Plait'
             pom.version = '0.0.3'
             repository(url: uri(rootProject.ext.repositories_url))
         }

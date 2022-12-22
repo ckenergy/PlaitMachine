@@ -1,5 +1,6 @@
 package com.ckenergy.trace;
 
+import android.os.Trace;
 import android.util.Log;
 
 import com.ckenergy.plaintmachine.PlaitContext;
@@ -8,11 +9,13 @@ public class TraceTag {
 
     private static final String TAG = "TraceTag";
 
-    public static void test1(PlaitContext plaitContext) {
-        Log.e(TAG, "Test1:"+ plaitContext);
+    public static void start(PlaitContext plaitContext) {
+//        Log.e(TAG, "Test1:"+ plaitContext);
+        Trace.beginSection(plaitContext.getClass().getName()+"."+plaitContext.getMethodName());
     }
 
-    public static void test(PlaitContext plaitContext) {
-        Log.e(TAG, "Test "+plaitContext);
+    public static void end(PlaitContext plaitContext) {
+//        Log.e(TAG, "Test "+plaitContext);
+        Trace.endSection();
     }
 }

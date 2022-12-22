@@ -119,9 +119,11 @@ class PlaitClassVisitor(
 
         log("filterMethodListWithClass packages:${plaintConfig.packages}, anno:${classAnnotationList}")
 
+        val newClassName = "$className/"
+
         plaintConfig.packages?.forEach {
             if (it.value != null) {
-                if (className.startsWith(it.key.replace("*", ""))) {
+                if (newClassName.startsWith(it.key.replace("*", ""))) {
                     methodListMap = transformMethod(it.value!!, methodListMap)
                     //把注解的类获取到
                 }else if (it.key.contains("@") && classAnnotationList.contains(it.key.replace("@", "L"))) {
@@ -142,9 +144,11 @@ class PlaitClassVisitor(
 
         log("filterBlackMethodListWithClass blackPackages:${plaintConfig.blackPackages}, annotation:${classAnnotationList}")
 
+        val newClassName = "$className/"
+
         plaintConfig.blackPackages?.forEach {
             if (it.value != null) {
-                if (className.startsWith(it.key.replace("*", ""))) {
+                if (newClassName.startsWith(it.key.replace("*", ""))) {
                     blackMethodMap = transformMethod(it.value!!, blackMethodMap)
                 }else if (it.key.contains("@") && classAnnotationList.contains(it.key.replace("@", "L"))) {
                     blackMethodMap = transformMethod(it.value!!, blackMethodMap)

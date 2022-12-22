@@ -6,9 +6,7 @@ import com.android.utils.FileUtils
 import com.ckenergy.trace.extension.PlaitExtension
 import com.ckenergy.trace.extension.PlaitMethodList
 import com.ckenergy.trace.extension.PlaintConfig
-import com.ckenergy.trace.extension.TraceMethodListExtension
 import org.apache.commons.codec.digest.DigestUtils
-import org.gradle.api.NamedDomainObjectContainer
 import org.objectweb.asm.ClassReader
 import org.objectweb.asm.ClassWriter
 import java.io.ByteArrayInputStream
@@ -26,13 +24,13 @@ import java.util.zip.ZipOutputStream
 /**
  * Created by chengkai on 2021/3/5.
  */
-class PlaintMachineTransform : Transform() {
+class PlaintTransform : Transform() {
 
     companion object {
         const val TAG = "===PlaintMachineTransform==="
 
-        fun newTransform(): PlaintMachineTransform {
-            return PlaintMachineTransform()
+        fun newTransform(): PlaintTransform {
+            return PlaintTransform()
         }
 
         private fun transformMap(plaitExtension: PlaitExtension): PlaintConfig {
@@ -69,7 +67,7 @@ class PlaintMachineTransform : Transform() {
                     if (list == null) {
                         list = ArrayList()
                     }
-                    map.put(it.name, list)
+                    map[it.name] = list
                     if (result.size == 2) {
                         val plaitMethodList = PlaitMethodList()
                         plaitMethodList.plaitClass = result[0]
@@ -82,7 +80,7 @@ class PlaintMachineTransform : Transform() {
                 plaitClassExtension.blackClassList?.forEach {
 //                    println("===$TAG >>>>> className:$classNameNew Trace:${it.name},")
                     val list1 = blackPackages[it.name] ?: ArrayList()
-                    blackPackages.put(it.name, list1)
+                    blackPackages[it.name] = list1
                     if (result.size == 2) {
                         val plaitMethodList = PlaitMethodList()
                         plaitMethodList.plaitClass = result[0]
@@ -128,7 +126,7 @@ class PlaintMachineTransform : Transform() {
     //创建大小为16的线程池
     private val executor = Executors.newFixedThreadPool(16)
 
-    override fun getName() = "PlaintMachineTransform"
+    override fun getName() = "PlaintTransform"
 
     override fun getInputTypes(): MutableSet<QualifiedContent.ContentType> {
         return TransformManager.CONTENT_CLASS

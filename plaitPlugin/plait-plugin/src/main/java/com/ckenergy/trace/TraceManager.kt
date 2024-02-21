@@ -1,19 +1,14 @@
 package com.ckenergy.trace
 
 import com.android.build.api.transform.Status
+import com.ckenergy.trace.Constants.TAG
 import com.ckenergy.trace.extension.PlaintConfig
 import com.ckenergy.trace.extension.PlaitExtension
 import com.ckenergy.trace.extension.PlaitMethodList
-<<<<<<<< HEAD:plaitPlugin/plait-plugin/src/main/java/com/ckenergy/trace/TraceManager.kt
 import com.ckenergy.trace.utils.FileUtil
 import com.ckenergy.trace.utils.Log
 import org.apache.commons.io.FileUtils
-========
-import com.ckenergy.trace.extension.PlaintConfig
-import org.apache.commons.codec.digest.DigestUtils
->>>>>>>> 8d7264b4744bfeedeffb4f670b9f50cb26d0bc8f:plaitPlugin/plait-plugin/src/main/java/com/ckenergy/trace/PlaintTransform.kt
 import org.objectweb.asm.ClassReader
-import org.objectweb.asm.ClassVisitor
 import org.objectweb.asm.ClassWriter
 import java.io.ByteArrayInputStream
 import java.io.File
@@ -27,28 +22,18 @@ import java.util.concurrent.Future
 import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
 import java.util.zip.ZipOutputStream
-import com.ckenergy.trace.Constants.TAG
 
 /**
  * @author yeahka
  * @date 2023/12/6
  * @desc
  */
-<<<<<<<< HEAD:plaitPlugin/plait-plugin/src/main/java/com/ckenergy/trace/TraceManager.kt
 class TraceManager(private val pluginInfo: PlaitExtension?) {
-========
-class PlaintTransform : Transform() {
->>>>>>>> 8d7264b4744bfeedeffb4f670b9f50cb26d0bc8f:plaitPlugin/plait-plugin/src/main/java/com/ckenergy/trace/PlaintTransform.kt
 
     companion object {
 
-<<<<<<<< HEAD:plaitPlugin/plait-plugin/src/main/java/com/ckenergy/trace/TraceManager.kt
         private fun log(info: String) {
 //            Log.d(TAG, info)
-========
-        fun newTransform(): PlaintTransform {
-            return PlaintTransform()
->>>>>>>> 8d7264b4744bfeedeffb4f670b9f50cb26d0bc8f:plaitPlugin/plait-plugin/src/main/java/com/ckenergy/trace/PlaintTransform.kt
         }
         private fun transformMap(plaitExtension: PlaitExtension): PlaintConfig {
             val classMap = HashMap<String, ArrayList<PlaitMethodList>?>()
@@ -84,7 +69,7 @@ class PlaintTransform : Transform() {
                     if (list == null) {
                         list = ArrayList()
                     }
-                    map[it.name] = list
+                    map.put(it.name, list)
                     if (result.size == 2) {
                         val plaitMethodList = PlaitMethodList()
                         plaitMethodList.plaitClass = result[0]
@@ -97,7 +82,7 @@ class PlaintTransform : Transform() {
                 plaitClassExtension.blackClassList?.forEach {
 //                    println("===$TAG >>>>> className:$classNameNew Trace:${it.name},")
                     val list1 = blackPackages[it.name] ?: ArrayList()
-                    blackPackages[it.name] = list1
+                    blackPackages.put(it.name, list1)
                     if (result.size == 2) {
                         val plaitMethodList = PlaitMethodList()
                         plaitMethodList.plaitClass = result[0]
@@ -138,7 +123,6 @@ class PlaintTransform : Transform() {
 
     private val executor: ExecutorService = Executors.newFixedThreadPool(16)
 
-<<<<<<<< HEAD:plaitPlugin/plait-plugin/src/main/java/com/ckenergy/trace/TraceManager.kt
     fun doTransform(
         classInputs: Collection<File>,
         changedFiles: Map<File, Status>,
@@ -146,23 +130,6 @@ class PlaintTransform : Transform() {
         isIncremental: Boolean,
         traceClassDirectoryOutput: File,
     ) {
-========
-    override fun getName() = "PlaintTransform"
-
-    override fun getInputTypes(): MutableSet<QualifiedContent.ContentType> {
-        return TransformManager.CONTENT_CLASS
-    }
-
-    override fun getScopes(): MutableSet<in QualifiedContent.Scope> {
-        return TransformManager.SCOPE_FULL_PROJECT
-    }
-
-    //是否支持增量更新
-    override fun isIncremental() = true
-
-    override fun transform(transformInvocation: TransformInvocation?) {
-        val extension = plaintMachineExtension
->>>>>>>> 8d7264b4744bfeedeffb4f670b9f50cb26d0bc8f:plaitPlugin/plait-plugin/src/main/java/com/ckenergy/trace/PlaintTransform.kt
         val startTime = System.currentTimeMillis()
 
         if (!traceClassDirectoryOutput.exists()) {

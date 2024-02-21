@@ -1,4 +1,4 @@
-# Plait
+# Plait(lastVersion=1.0.0)
 
 1、	Plait是一个开源的android studio asm编译期进行的插桩插件，可以自定义要插桩的方法、被插入的代码位置和黑名单（要排除）方法。
 
@@ -12,10 +12,10 @@
 
 ```groovy
 // root gradle
-classpath  "io.github.ckenergy:plait-plugin:1.0.0"
+classpath  "io.github.ckenergy:plait-plugin:$lastVersion"
 
 //app gradle
-implementation ("io.github.ckenergy:plait-core:1.0.0")
+implementation ("io.github.ckenergy:plait-core:$lastVersion")
 
 plaitClass {//要织入的方法列表
         "com/ckenergy/trace/TraceTag.test" {
@@ -38,8 +38,6 @@ plaitClass {//要织入的方法列表
     .....
 }
 ```
-
-按图示点击uploadarchives即可生成本地插件，或者使用命令行输入，当前工程位置 .\gradlew uploadarchives（注意mac下使用./）
 
 ## 重要！！！
 

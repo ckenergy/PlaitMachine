@@ -1,5 +1,0 @@
-rootProject.name = "plaitPlugin"
-//include ':app'
-include ':asm'
-//include ':plaitmachine'
-//include ':lib'

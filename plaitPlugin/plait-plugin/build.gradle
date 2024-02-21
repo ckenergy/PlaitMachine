@@ -1,0 +1,73 @@
+plugins {
+    id 'java-library'
+    id 'kotlin'
+    id 'groovy'
+    id 'java-gradle-plugin'
+    id 'kotlin-kapt'
+    id "org.jetbrains.kotlin.jvm"
+}
+
+apply  from: '../../upload_maven.gradle'
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
+}
+
+sourceSets {
+    main {
+        groovy {
+            srcDir 'src/main/groovy'
+        }
+
+        java {
+            srcDir 'src/main/java'
+        }
+
+        kotlin {
+            srcDir 'src/main/kotlin'
+        }
+
+        resources {
+            srcDir 'src/main/resources'
+        }
+    }
+}
+
+dependencies {
+    implementation gradleApi()
+    implementation localGroovy()
+    implementation 'commons-io:commons-io:2.6'
+    implementation 'org.javassist:javassist:3.27.0-GA'
+    implementation 'org.ow2.asm:asm-commons:9.1'
+//    api project(path: ':check-thread')
+//    kapt "com.google.auto.service:auto-service:1.0-rc6"
+    implementation 'com.google.auto.service:auto-service:1.0'
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+    compileOnly "com.android.tools.build:gradle:7.4.2"
+    implementation("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version")
+}
+
+gradlePlugin {
+    plugins {
+        version {
+            // 在 app 模块需要通过 id 引用这个插件
+            id = 'plait-plugin'
+            // 实现这个插件的类的路径
+            implementationClass = 'com.ckenergy.trace.PlaitMachinePlugin'
+        }
+    }
+}
+
+//指定上传的地址和插件id,版本
+//需要上传之后才可以给其他工程当做插件使用
+//uploadArchives {
+//    repositories {
+//        mavenDeployer {
+//            pom.groupId = 'io.github.ckenergy'
+//            pom.artifactId = 'PlaitPlugin'
+//            pom.version = '0.0.3'
+//            repository(url: uri(rootProject.ext.repositories_url))
+//        }
+//    }
+//}

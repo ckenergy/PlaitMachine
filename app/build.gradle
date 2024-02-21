@@ -1,6 +1,6 @@
 plugins {
     id 'com.android.application'
-    id 'plait-machine'
+    id 'plait-plugin'
 }
 apply plugin: 'kotlin-android'
 
@@ -34,7 +34,7 @@ dependencies {
     implementation 'androidx.appcompat:appcompat:1.3.0'
     implementation 'com.google.android.material:material:1.3.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.0.4'
-    implementation project(path: ':plait')
+    implementation project(path: ':plait-core')
     implementation project(path: ':lib')
     testImplementation 'junit:junit:4.+'
     androidTestImplementation 'androidx.test.ext:junit:1.1.2'
@@ -43,7 +43,7 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
 }
 
-plaitMachine {
+plait {
     enable = true //是否启用
     logInfo = true//输出日志
     plaitClass {//要织入的方法列表
@@ -89,6 +89,6 @@ plaitMachine {
     }
 }
 
-repositories {
-    mavenCentral()
-}
+//repositories {
+//    mavenCentral()
+//}

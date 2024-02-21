@@ -1,0 +1,4 @@
+#!/bin/bash
+export JAVA_HOME='/Library/Java/JavaVirtualMachines/jdk-11.0.2.jdk/Contents/Home'
+./gradlew plait-core:publishToMavenLocal
+./gradlew :plaitPlugin:plait-plugin:publishToMavenLocal

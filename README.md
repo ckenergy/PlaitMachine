@@ -11,6 +11,12 @@
 ### 使用方式
 
 ```groovy
+// root gradle
+classpath  "io.github.ckenergy:plait-plugin:1.0.0"
+
+//app gradle
+implementation ("io.github.ckenergy:plait-core:1.0.0")
+
 plaitClass {//要织入的方法列表
         "com/ckenergy/trace/TraceTag.test" {
             // 要织入的类名和方法名,注意只能是静态和返回值的方法
